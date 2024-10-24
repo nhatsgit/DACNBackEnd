@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ecommerce_api.Models;
+using System;
 using System.Collections.Generic;
 
 namespace ecommerce_api.Models;
@@ -33,7 +34,7 @@ public partial class Order
 
     public virtual Payment? Payment { get; set; }
 
-    public virtual AspNetUser User { get; set; } = null!;
+    public virtual ApplicationUser User { get; set; } = null!;
 
     public virtual Voucher? Voucher { get; set; }
 }

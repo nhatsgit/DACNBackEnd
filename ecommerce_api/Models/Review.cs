@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ecommerce_api.Models;
+using System;
 using System.Collections.Generic;
 
 namespace ecommerce_api.Models;
@@ -17,7 +18,7 @@ public partial class Review
 
     public int ProductId { get; set; }
 
-    public virtual AspNetUser Customer { get; set; } = null!;
+    public virtual ApplicationUser Customer { get; set; } = null!;
 
     public virtual Product Product { get; set; } = null!;
 

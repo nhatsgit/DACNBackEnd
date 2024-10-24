@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ecommerce_api.Models;
+using System;
 using System.Collections.Generic;
 
 namespace ecommerce_api.Models;
@@ -25,7 +26,7 @@ public partial class Shop
 
     public bool? BiChan { get; set; }
 
-    public virtual ICollection<AspNetUser> AspNetUsers { get; set; } = new List<AspNetUser>();
+    public virtual ICollection<ApplicationUser> AspNetUsers { get; set; } = new List<ApplicationUser>();
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
