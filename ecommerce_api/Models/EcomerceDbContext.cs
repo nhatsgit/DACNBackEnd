@@ -63,7 +63,7 @@ public partial class EcomerceDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.HasIndex(e => e.OrderStatusId, "IX_Orders_OrderStatusId");
 
-            entity.HasIndex(e => e.OrderStatusId1, "IX_Orders_OrderStatusId1");
+            
 
             entity.HasIndex(e => e.PaymentId, "IX_Orders_PaymentId");
 
@@ -77,7 +77,7 @@ public partial class EcomerceDbContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(d => d.OrderStatusId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(d => d.OrderStatusId1Navigation).WithMany(p => p.OrderOrderStatusId1Navigations).HasForeignKey(d => d.OrderStatusId1);
+            
 
             entity.HasOne(d => d.Payment).WithMany(p => p.Orders).HasForeignKey(d => d.PaymentId);
 

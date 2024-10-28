@@ -1,5 +1,4 @@
 ﻿using ecommerce_api.Models;
-using ecommerce_api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -80,6 +79,10 @@ namespace ecommerce_api.Repostitories
                 await _userManager.AddToRoleAsync(user, "Customer");
             }
             return result;
+        }
+        public async Task<ApplicationUser> GetCurrentUserAsync(string userId)
+        {
+            return await _userManager.FindByNameAsync(userId);
         }
     }
 }

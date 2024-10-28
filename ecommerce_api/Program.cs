@@ -42,7 +42,16 @@ builder.Services.AddSwaggerGen(option =>
 	});
 });
 
-builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()   // Allow any origin
+                   .AllowAnyMethod()   // Allow any HTTP method
+                   .AllowAnyHeader();  // Allow any header
+        });
+});
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<EcomerceDbContext>()
@@ -86,7 +95,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseCors("AllowAll");
 app.MapControllers();
 
 app.Run();

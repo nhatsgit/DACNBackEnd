@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace ecommerce_api.Models;
 
@@ -36,7 +37,7 @@ public partial class Product
     public string? MaSp { get; set; }
 
     public virtual Brand Brand { get; set; } = null!;
-
+    [JsonIgnore]
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual Category ProductCategory { get; set; } = null!;

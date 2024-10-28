@@ -2,6 +2,7 @@
 using ecommerce_api.Repostitories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ecommerce_api.Controllers
 {
@@ -37,6 +38,38 @@ namespace ecommerce_api.Controllers
                 return Unauthorized();
             }
             return Ok(result);
+        }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetCurrentUserInfo()
+        {
+            // Lấy ID người dùng từ claims
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userName == null)
+            {
+                return Unauthorized();
+            }
+
+            // Sử dụng repository để lấy thông tin người dùng
+            var user = await accountRepository.GetCurrentUserAsync(userName);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Trả về thông tin người dùng (DTO)
+            var userInfo = new
+            {
+                user.Id,
+                user.UserName,
+                user.Email,
+                user.FullName, 
+                user.Address ,
+                user.PhoneNumber 
+            };
+
+            return Ok(userInfo);
         }
     }
 }

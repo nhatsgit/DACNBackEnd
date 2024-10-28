@@ -9,6 +9,8 @@ using ecommerce_api.Models;
 using Microsoft.AspNetCore.Authorization;
 using ecommerce_api.Repostitories;
 using ecommerce_api.DTO;
+using X.PagedList;
+using AutoMapper;
 
 namespace ecommerce_api.Controllers
 {
@@ -17,13 +19,12 @@ namespace ecommerce_api.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductRepository _productRepository;
+        private readonly IMapper _mapper;
 
-
-        public ProductsController(EcomerceDbContext context, IProductRepository productRepository)
+        public ProductsController(IMapper mapper, IProductRepository productRepository)
         {
-
+            _mapper = mapper;
             _productRepository = productRepository;
-
         }
 
 
@@ -31,7 +32,7 @@ namespace ecommerce_api.Controllers
         public async Task<IActionResult> GetAllProducts()
         {
             var products = await _productRepository.GetAllProducts();
-            return Ok(products);
+            return Ok(_mapper.Map<IEnumerable<ProductDTO>>(products));
         }
 
         // GET: api/Products/5
@@ -42,7 +43,11 @@ namespace ecommerce_api.Controllers
             try
             {
                 var product = await _productRepository.GetProductById(id);
-                return Ok(product);
+                if(product.DaAn==true)
+                {
+                    return NotFound();
+                }
+                return Ok(_mapper.Map<ProductDTO>(product));
             }
             catch (KeyNotFoundException)
             {
@@ -61,8 +66,12 @@ namespace ecommerce_api.Controllers
 
             try
             {
-                var product=await _productRepository.UpdateProduct(id, productDto);
-                return Ok(product);
+                var product = await _productRepository.GetProductById(id);
+                if (product == null)
+                    throw new KeyNotFoundException("Product not found");
+                _mapper.Map(productDto, product);
+                var updateProduct=await _productRepository.UpdateProduct(id, product);
+                return Ok(_mapper.Map<ProductDTO>(updateProduct));
             }
             catch (KeyNotFoundException)
             {
@@ -79,8 +88,8 @@ namespace ecommerce_api.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-            var createdProduct = await _productRepository.AddProduct(productDto);
+            var product = _mapper.Map<Product>(productDto);
+            var createdProduct = await _productRepository.AddProduct(product);
             return CreatedAtAction(nameof(GetProduct), new { id = createdProduct.ProductId }, createdProduct);
         }
 
@@ -91,14 +100,58 @@ namespace ecommerce_api.Controllers
             try
             {
                 var product = await _productRepository.DeleteProduct(id);
-                return Ok(product);
+
+                return Ok(_mapper.Map<ProductDTO>(product));
             }
             catch (KeyNotFoundException)
             {
                 return NotFound();
             }
         }
+        [HttpGet("query")]
+        public async Task<IActionResult> QueryProducts(
+            [FromQuery] string? keyword, [FromQuery] int? categoryId,
+            [FromQuery] int? brandId,[FromQuery] int? shopId, 
+            [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, 
+            [FromQuery] int pageNumber=1 , [FromQuery] int pageSize = 10)
+        {
+            var products = await _productRepository.QueryProducts( keyword, categoryId,brandId,shopId, minPrice, maxPrice) ;
+            
+            if (products == null || !products.Any())
+            {
+                return NotFound("No products found matching your search criteria.");
+            }
+            return Ok(new PagedListDTO<ProductDTO>(_mapper.Map<IEnumerable<ProductDTO>>(products).ToPagedList(pageNumber,pageSize)));
+        }
+        [HttpGet("searchSuggestions")]
+        public async Task<List<string>> SearchSuggestions([FromQuery] string keyword)
+        {
+            return await _productRepository.GetSearchSuggestions(keyword) ;
+        }
+        [HttpGet("suggestionsToday")]
+        public async Task<IActionResult> Get12RandomProducts()
+        {
+            var randomProducts = await _productRepository.GetRandomProducts(12);
 
+            if (randomProducts == null || !randomProducts.Any())
+            {
+                return NotFound("No products found.");
+            }
 
+            return Ok(_mapper.Map<IEnumerable<ProductDTO>>(randomProducts));
+        }
+        [HttpGet("sliderBar")]
+        public async Task<IActionResult> Get3RandomProducts()
+        {
+            var randomProducts = await _productRepository.GetRandomProducts(3);
+
+            if (randomProducts == null || !randomProducts.Any())
+            {
+                return NotFound("No products found.");
+            }
+
+            return Ok(_mapper.Map<IEnumerable<ProductDTO>>(randomProducts));
+        }
+        
     }
 }

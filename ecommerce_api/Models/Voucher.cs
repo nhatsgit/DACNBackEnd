@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace ecommerce_api.Models;
 
@@ -24,6 +25,7 @@ public partial class Voucher
     public int? ShopId { get; set; }
 
     public DateTime? NgayBatDau { get; set; }
+    [JsonIgnore]
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 

@@ -9,24 +9,22 @@ namespace ecommerce_api.Repostitories
     public class ProductRepository:IProductRepository
     {
         private readonly EcomerceDbContext _context;
-        private readonly IMapper _mapper;
 
-        public ProductRepository(EcomerceDbContext context, IMapper mapper)
+        public ProductRepository(EcomerceDbContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
-        public async Task<IEnumerable<ProductDTO>> GetAllProducts()
+        public async Task<IEnumerable<Product>> GetAllProducts()
         {
             var products = await _context.Products
                 .Include(p => p.ProductCategory) 
                 .Include(p => p.Brand) 
                 .ToListAsync();
-            return _mapper.Map<IEnumerable<ProductDTO>>(products);
+            return products;
         }
 
-        public async Task<ProductDTO> GetProductById(int id)
+        public async Task<Product> GetProductById(int id)
         {
             var product = await _context.Products
                 .Include(p => p.ProductCategory)
@@ -34,18 +32,18 @@ namespace ecommerce_api.Repostitories
                 .FirstOrDefaultAsync(p => p.ProductId == id);
             if (product == null)
                 throw new KeyNotFoundException("Product not found");
-            return _mapper.Map<ProductDTO>(product);
+            return product;
         }
-        public async Task<ProductDTO> AddProduct(ProductDTO productDto)
+        public async Task<Product> AddProduct(Product product)
         {
-            var product = _mapper.Map<Product>(productDto); 
+            
             await _context.Products.AddAsync(product);
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<ProductDTO>(product);  
+            return product;  
         }
 
-        public async Task<ProductDTO> DeleteProduct(int id)
+        public async Task<Product> DeleteProduct(int id)
         {
             var product = await _context.Products
                 .Include(p => p.ProductCategory)
@@ -56,20 +54,72 @@ namespace ecommerce_api.Repostitories
             product.DaAn = true;
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
-            return _mapper.Map<ProductDTO>(product);
+            return product;
         }
 
-        public async Task<ProductDTO> UpdateProduct(int id, ProductDTO productDto)
+        public async Task<Product> UpdateProduct(int id, Product product)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
-                throw new KeyNotFoundException("Product not found");
-
-            _mapper.Map(productDto, product);  // Cập nhật giá trị từ DTO sang Product
+              
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
+            return product; 
+        }
+        public async Task<IEnumerable<Product>> QueryProducts(string? keyword, int? categoryId=null,int? brandId=null,int? shopId = null, decimal? minPrice=null, decimal? maxPrice=null)
+        {
+            var query = _context.Products
+                .Include(p => p.ProductCategory)
+                .Include(p => p.Shop)
+                .Include(p => p.Brand)
+                .Where(p => p.DaAn == false) 
+                .AsQueryable();
 
-            return _mapper.Map<ProductDTO>(product); 
+  
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(p => p.TenSp.Contains(keyword));
+            }
+            if (categoryId.HasValue)
+            {
+                query = query.Where(p => p.ProductCategoryId == categoryId.Value);
+            }
+            if (brandId.HasValue)
+            {
+                query = query.Where(p => p.BrandId == brandId.Value);
+            }
+            if (shopId.HasValue)
+            {
+                query = query.Where(p => p.ShopId == shopId.Value);
+            }
+            if (minPrice.HasValue)
+            {
+                query = query.Where(p => p.GiaBan >= minPrice.Value);
+            }
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(p => p.GiaBan <= maxPrice.Value);
+            }
+
+           
+            var products = await query.OrderBy(p=>p.ProductId).ToListAsync();
+            return products;
+        }
+        public async Task<IEnumerable<Product>> GetRandomProducts(int numberOfProducts)
+        {
+            var products = await _context.Products
+                .Include(p => p.ProductCategory)
+                .Where(p => p.DaAn == false) 
+                .OrderBy(p => Guid.NewGuid())
+                .Take(numberOfProducts) 
+                .ToListAsync();
+
+            return products;
+        }
+
+        public async Task<List<string>> GetSearchSuggestions(string keyword)
+        {
+            var products=await QueryProducts(keyword:keyword);
+            var suggestions = products.Take(5).Select(p => p.TenSp);
+            return suggestions.ToList();
         }
     }
 }

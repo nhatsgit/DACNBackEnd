@@ -7,6 +7,7 @@ namespace ecommerce_api.Repostitories
     {
         public Task<string> Login(LoginModel loginModel);
         public Task<IdentityResult> Register(RegisterModel registerModel);
+        public Task<ApplicationUser> GetCurrentUserAsync(string userId);
 
     }
 }
