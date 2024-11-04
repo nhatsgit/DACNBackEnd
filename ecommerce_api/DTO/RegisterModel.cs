@@ -12,6 +12,8 @@ namespace ecommerce_api.Models
         public string FullName { get; set; }
         [Required]
         public string Address { get; set; }
+        [Required]
+        public string Avatar { get; set; }
         [Required, EmailAddress]
         public string? Email { get; set; }
         [Required, Phone]

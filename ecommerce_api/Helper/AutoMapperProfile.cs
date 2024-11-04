@@ -20,5 +20,7 @@ public class AutoMapperProfile : Profile
             .ReverseMap();
         CreateMap<ApplicationUser, UserDTO>()
             .ReverseMap();
+        CreateMap<Voucher, VoucherDTO>()
+            .ReverseMap();
     }
 }

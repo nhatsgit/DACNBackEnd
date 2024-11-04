@@ -50,7 +50,7 @@ namespace ecommerce_api.Repostitories
             var token = new JwtSecurityToken(
                 issuer: _config["JWT:ValidIssuer"],
                 audience: _config["JWT:ValidAudience"],
-                expires: DateTime.Now.AddMinutes(30),
+                expires: DateTime.Now.AddMinutes(60),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authenKey, SecurityAlgorithms.HmacSha512Signature)
             );
@@ -70,7 +70,6 @@ namespace ecommerce_api.Repostitories
             var result= await _userManager.CreateAsync(user,registerModel.Password);
             if (result.Succeeded)
             {
-                //kiểm tra role Customer đã có
                 if (!await roleManager.RoleExistsAsync("Customer"))
                 {
                     await roleManager.CreateAsync(new IdentityRole("Customer"));

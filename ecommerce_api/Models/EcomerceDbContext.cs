@@ -47,12 +47,15 @@ public partial class EcomerceDbContext : IdentityDbContext<ApplicationUser>
     public virtual DbSet<Voucher> Vouchers { get; set; }
 
     public virtual DbSet<VoucherCategory> VoucherCategories { get; set; }
+    public virtual DbSet<CartItem> CartItems { get; set; }
+    public virtual DbSet<ShoppingCart> ShoppingCart { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => new { l.LoginProvider, l.ProviderKey, l.UserId });
         modelBuilder.Entity<IdentityUserRole<string>>().HasKey(r => new { r.UserId, r.RoleId });
         modelBuilder.Entity<IdentityUserToken<string>>().HasKey(t => new { t.UserId, t.LoginProvider, t.Name });
+        
 
         modelBuilder.Entity<Category>(entity =>
         {
@@ -171,8 +174,18 @@ public partial class EcomerceDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.ToTable("VoucherCategory");
         });
+        modelBuilder.Entity<CartItem>()
+         .HasOne(ci => ci.ShoppingCart)
+         .WithMany(sc => sc.CartItems)
+         .HasForeignKey(ci => ci.ShoppingCartId);
 
+        modelBuilder.Entity<CartItem>()
+            .HasOne(ci => ci.Product)
+            .WithMany()
+            .HasForeignKey(ci => ci.ProductId);
         OnModelCreatingPartial(modelBuilder);
+        
+        
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

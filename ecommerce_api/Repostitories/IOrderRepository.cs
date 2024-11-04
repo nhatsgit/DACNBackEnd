@@ -7,5 +7,7 @@ namespace ecommerce_api.Repostitories
     {
         Task<IEnumerable<Order>> GetUserOrder(string userName);
         Task<Order> GetOrderDetail(string userName,int orderId);
+        Task<Order> CancelOrder(string userName, int id);
+
     }
 }

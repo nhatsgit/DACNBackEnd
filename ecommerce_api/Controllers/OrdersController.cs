@@ -53,5 +53,22 @@ namespace ecommerce_api.Controllers
             }
             return Ok(_mapper.Map<OrderDTO>(order));
         }
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelOrder(int id)
+        {
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userName == null)
+            {
+                return Unauthorized();
+            }
+            var order = await orderRepository.CancelOrder(userName,id);
+            if(order == null)
+            {
+                return NotFound();
+            }
+            return Ok("Canceled");
+        }
     }
 }

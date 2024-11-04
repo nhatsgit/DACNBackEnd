@@ -18,6 +18,26 @@ namespace ecommerce_api.Repostitories
             _mapper = mapper;
             _accountRepository = accountRepository;
         }
+
+        public async Task<Order> CancelOrder(string userName, int id)
+        {
+            var user = await _accountRepository.GetCurrentUserAsync(userName);
+            var order=await _context.Orders
+                .Include(o => o.OrderDetails)
+                .ThenInclude(o => o.Product)
+                .Include(o => o.User)
+                .Include(o => o.Payment)
+                .Include(o => o.OrderStatus)
+                .Include(o => o.Voucher)
+                .FirstOrDefaultAsync(o=>o.OrderId == id&&o.UserId==user.Id);
+            if(order != null)
+            {
+                order.OrderStatusId = 6;
+                await _context.SaveChangesAsync();
+            }
+            return order;
+        }
+
         public async Task<Order?> GetOrderDetail(string userName, int orderId)
         {
             var user = await _accountRepository.GetCurrentUserAsync(userName);
@@ -46,7 +66,6 @@ namespace ecommerce_api.Repostitories
                 .Include(o=>o.Voucher)
                 .Include(o=>o.User)
                 .ToListAsync();
-            
         }
     }
 }

@@ -1,4 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ecommerce_api.DTO;
+using ecommerce_api.Migrations;
+using ecommerce_api.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -8,36 +14,174 @@ namespace ecommerce_api.Controllers
     [ApiController]
     public class ShoppingCartController : ControllerBase
     {
-        // GET: api/<ShoppingCartController>
+        private readonly EcomerceDbContext _context; // Đổi thành tên DbContext của bạn
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public ShoppingCartController(EcomerceDbContext context, UserManager<ApplicationUser> userManager)
+        {
+            _context = context;
+            _userManager = userManager;
+        }
+
+        [HttpPost("addtocart")]
+        public async Task<IActionResult> AddToCart([FromBody] AddToCartDto model)
+        {
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            if (model == null || model.Quantity <= 0)
+            {
+                return BadRequest("Invalid product data.");
+            }
+            var product = await _context.Products.FindAsync(model.ProductId);
+            if (product == null)
+            {
+                return BadRequest("Invalid product data.");
+            }
+
+            var shoppingCart = await _context.ShoppingCart
+                .Include(s => s.CartItems)
+                .FirstOrDefaultAsync(s => s.UserId == user.Id && s.ShopId == product.ShopId);
+
+
+            if (shoppingCart == null)
+            {
+                shoppingCart = new ShoppingCart
+                {
+                    UserId = user.Id,
+                    ShopId = product.ShopId,
+                    CreatedDate = DateTime.UtcNow,
+                };
+                _context.ShoppingCart.Add(shoppingCart);
+                await _context.SaveChangesAsync();
+            }
+
+            var cartItem = shoppingCart.CartItems
+                .FirstOrDefault(ci => ci.ProductId == model.ProductId);
+
+            if (cartItem != null)
+            {
+                cartItem.Quantity += model.Quantity;
+            }
+            else
+            {
+                cartItem = new CartItem
+                {
+                    ProductId = model.ProductId,
+                    Quantity = model.Quantity,
+                };
+                shoppingCart.CartItems.Add(cartItem);
+            }
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Product added to cart successfully." });
+        }
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<IActionResult> GetMyCarts()
         {
-            return new string[] { "value1", "value2" };
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+            var mycarts = await _context.ShoppingCart.Where(s => s.UserId == user.Id).Include(s => s.CartItems).ToListAsync();
+            return Ok(mycarts);
+        }
+        [HttpPost("checkout")]
+        public async Task<IActionResult> Checkout([FromQuery]int shoppingCartId,CheckOutDTO model)
+        {
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+            var shoppingCart = await _context.ShoppingCart
+             .Include(c => c.CartItems)
+            .ThenInclude(c=>c.Product)
+            .FirstOrDefaultAsync(c => c.ShoppingCartId == shoppingCartId && c.UserId == user.Id);
+
+            if (shoppingCart == null)
+            {
+                return BadRequest("Invalid  data.");
+                
+            }
+            var totalPrice = shoppingCart.CartItems.Sum(ci => ci.Quantity * (ci.Product.GiaBan * (100 - ci.Product.PhanTramGiam??0)/100 )) ;
+            var order = new Order
+            {
+                OrderDate = DateTime.UtcNow,
+                TotalPrice = totalPrice,
+                ShippingAddress = model.ShippingAddress,
+                OrderStatusId = 1,
+                VoucherId=model.VoucherId??1,
+                Notes=model.Notes??" ",
+                PaymentId=model.PaymentId??1,
+                UserId = user.Id,
+                OrderDetails = shoppingCart.CartItems.Select(ci => new OrderDetail
+                {
+                    ProductId = ci.ProductId,
+                    Quantity = ci.Quantity,
+                }).ToList()
+            };
+
+            _context.Orders.Add(order);
+            _context.CartItems.RemoveRange(shoppingCart.CartItems);
+            _context.ShoppingCart.Remove(shoppingCart);
+
+            await _context.SaveChangesAsync();
+
+            
+            return Ok(order);
         }
 
-        // GET api/<ShoppingCartController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpPost("deleteItem")]
+        public async Task<IActionResult> RemoveCartItem(int cartItemId)
         {
-            return "value";
+            var cartItem= await _context.CartItems.Include(c=>c.ShoppingCart).FirstOrDefaultAsync(c=>c.CartItemId==cartItemId);
+            if (cartItem==null)
+            {
+                return BadRequest("Invalid Data");
+            }
+            var shoppingCart = await _context.CartItems.Where(c=>c.ShoppingCartId==cartItem.ShoppingCartId).ToListAsync();
+            
+            if (shoppingCart.Count <=1)
+            {
+                _context.CartItems.Remove(cartItem);
+                _context.ShoppingCart.Remove(cartItem.ShoppingCart);
+            }else
+                _context.CartItems.Remove(cartItem);
+            await _context.SaveChangesAsync();
+
+            return Ok("Deleted");
+        }
+        [HttpPost("deleteAll")]
+        public async Task<IActionResult> RemoveAllCart()
+        {
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+            var shoppingCarts = await _context.ShoppingCart
+                .Where(s => s.UserId == user.Id)
+                .Include(s => s.CartItems)
+                .ToListAsync();
+            if (shoppingCarts == null)
+            {
+                return BadRequest("Invalid Data");
+            }
+            shoppingCarts.ForEach(cart => _context.CartItems.RemoveRange(cart.CartItems)); 
+            _context.ShoppingCart.RemoveRange(shoppingCarts);
+            await _context.SaveChangesAsync();
+
+            return Ok("Deleted");
         }
 
-        // POST api/<ShoppingCartController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<ShoppingCartController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<ShoppingCartController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
     }
 }

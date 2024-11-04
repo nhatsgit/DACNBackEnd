@@ -15,6 +15,7 @@ public partial class Voucher
     public DateTime NgayHetHan { get; set; }
 
     public int SoLuongCon { get; set; }
+    [JsonIgnore]
 
     public int VoucherCategoryId { get; set; }
 
@@ -28,6 +29,7 @@ public partial class Voucher
     [JsonIgnore]
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+    [JsonIgnore]
 
     public virtual VoucherCategory VoucherCategory { get; set; } = null!;
 }

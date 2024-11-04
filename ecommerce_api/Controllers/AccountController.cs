@@ -1,5 +1,8 @@
-﻿using ecommerce_api.Models;
+﻿using AutoMapper;
+using ecommerce_api.DTO;
+using ecommerce_api.Models;
 using ecommerce_api.Repostitories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -11,9 +14,11 @@ namespace ecommerce_api.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountRepository accountRepository;
-        public AccountController(IAccountRepository accountRepository)
+        private readonly IMapper mapper;
+        public AccountController(IAccountRepository accountRepository,IMapper mapper)
         {
             this.accountRepository = accountRepository;
+            this.mapper = mapper;
         }
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
@@ -41,9 +46,9 @@ namespace ecommerce_api.Controllers
         }
 
         [HttpGet("me")]
+        [Authorize]
         public async Task<IActionResult> GetCurrentUserInfo()
         {
-            // Lấy ID người dùng từ claims
             var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userName == null)
@@ -51,23 +56,13 @@ namespace ecommerce_api.Controllers
                 return Unauthorized();
             }
 
-            // Sử dụng repository để lấy thông tin người dùng
             var user = await accountRepository.GetCurrentUserAsync(userName);
             if (user == null)
             {
                 return NotFound();
             }
 
-            // Trả về thông tin người dùng (DTO)
-            var userInfo = new
-            {
-                user.Id,
-                user.UserName,
-                user.Email,
-                user.FullName, 
-                user.Address ,
-                user.PhoneNumber 
-            };
+            var userInfo = mapper.Map<UserDTO>(user);
 
             return Ok(userInfo);
         }

@@ -22,77 +22,6 @@ namespace ecommerce_api.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("DoAnNhom11.Models.ApplicationUser", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Avatar")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("ShopId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ShopId");
-
-                    b.ToTable("Users");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -207,6 +136,77 @@ namespace ecommerce_api.Migrations
                     b.ToTable("UserTokens");
                 });
 
+            modelBuilder.Entity("ecommerce_api.Models.ApplicationUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Avatar")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ShopId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShopId");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("ecommerce_api.Models.Brand", b =>
                 {
                     b.Property<int>("BrandId")
@@ -222,6 +222,32 @@ namespace ecommerce_api.Migrations
                     b.HasKey("BrandId");
 
                     b.ToTable("Brands");
+                });
+
+            modelBuilder.Entity("ecommerce_api.Models.CartItem", b =>
+                {
+                    b.Property<int>("CartItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartItemId"));
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShoppingCartId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CartItemId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ShoppingCartId");
+
+                    b.ToTable("CartItems");
                 });
 
             modelBuilder.Entity("ecommerce_api.Models.Category", b =>
@@ -260,9 +286,6 @@ namespace ecommerce_api.Migrations
                     b.Property<int?>("OrderStatusId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("OrderStatusId1")
-                        .HasColumnType("int");
-
                     b.Property<int?>("PaymentId")
                         .HasColumnType("int");
 
@@ -282,8 +305,6 @@ namespace ecommerce_api.Migrations
                     b.HasKey("OrderId");
 
                     b.HasIndex(new[] { "OrderStatusId" }, "IX_Orders_OrderStatusId");
-
-                    b.HasIndex(new[] { "OrderStatusId1" }, "IX_Orders_OrderStatusId1");
 
                     b.HasIndex(new[] { "PaymentId" }, "IX_Orders_PaymentId");
 
@@ -565,6 +586,34 @@ namespace ecommerce_api.Migrations
                     b.ToTable("ShopCategories");
                 });
 
+            modelBuilder.Entity("ecommerce_api.Models.ShoppingCart", b =>
+                {
+                    b.Property<int>("ShoppingCartId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShoppingCartId"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ShopId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ShoppingCartId");
+
+                    b.HasIndex("ShopId");
+
+                    b.ToTable("ShoppingCart");
+                });
+
             modelBuilder.Entity("ecommerce_api.Models.Voucher", b =>
                 {
                     b.Property<int>("VoucherId")
@@ -625,13 +674,32 @@ namespace ecommerce_api.Migrations
                     b.ToTable("VoucherCategory", (string)null);
                 });
 
-            modelBuilder.Entity("DoAnNhom11.Models.ApplicationUser", b =>
+            modelBuilder.Entity("ecommerce_api.Models.ApplicationUser", b =>
                 {
                     b.HasOne("ecommerce_api.Models.Shop", "MyShop")
                         .WithMany("AspNetUsers")
                         .HasForeignKey("ShopId");
 
                     b.Navigation("MyShop");
+                });
+
+            modelBuilder.Entity("ecommerce_api.Models.CartItem", b =>
+                {
+                    b.HasOne("ecommerce_api.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ecommerce_api.Models.ShoppingCart", "ShoppingCart")
+                        .WithMany("CartItems")
+                        .HasForeignKey("ShoppingCartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ShoppingCart");
                 });
 
             modelBuilder.Entity("ecommerce_api.Models.Order", b =>
@@ -641,15 +709,11 @@ namespace ecommerce_api.Migrations
                         .HasForeignKey("OrderStatusId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("ecommerce_api.Models.OrderStatus", "OrderStatusId1Navigation")
-                        .WithMany("OrderOrderStatusId1Navigations")
-                        .HasForeignKey("OrderStatusId1");
-
                     b.HasOne("ecommerce_api.Models.Payment", "Payment")
                         .WithMany("Orders")
                         .HasForeignKey("PaymentId");
 
-                    b.HasOne("DoAnNhom11.Models.ApplicationUser", "User")
+                    b.HasOne("ecommerce_api.Models.ApplicationUser", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -660,8 +724,6 @@ namespace ecommerce_api.Migrations
                         .HasForeignKey("VoucherId");
 
                     b.Navigation("OrderStatus");
-
-                    b.Navigation("OrderStatusId1Navigation");
 
                     b.Navigation("Payment");
 
@@ -729,7 +791,7 @@ namespace ecommerce_api.Migrations
 
             modelBuilder.Entity("ecommerce_api.Models.Review", b =>
                 {
-                    b.HasOne("DoAnNhom11.Models.ApplicationUser", "Customer")
+                    b.HasOne("ecommerce_api.Models.ApplicationUser", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -768,6 +830,17 @@ namespace ecommerce_api.Migrations
                     b.Navigation("ShopCategory");
                 });
 
+            modelBuilder.Entity("ecommerce_api.Models.ShoppingCart", b =>
+                {
+                    b.HasOne("ecommerce_api.Models.Shop", "Shop")
+                        .WithMany()
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shop");
+                });
+
             modelBuilder.Entity("ecommerce_api.Models.Voucher", b =>
                 {
                     b.HasOne("ecommerce_api.Models.VoucherCategory", "VoucherCategory")
@@ -779,7 +852,7 @@ namespace ecommerce_api.Migrations
                     b.Navigation("VoucherCategory");
                 });
 
-            modelBuilder.Entity("DoAnNhom11.Models.ApplicationUser", b =>
+            modelBuilder.Entity("ecommerce_api.Models.ApplicationUser", b =>
                 {
                     b.Navigation("Orders");
                 });
@@ -801,8 +874,6 @@ namespace ecommerce_api.Migrations
 
             modelBuilder.Entity("ecommerce_api.Models.OrderStatus", b =>
                 {
-                    b.Navigation("OrderOrderStatusId1Navigations");
-
                     b.Navigation("OrderOrderStatuses");
                 });
 
@@ -835,6 +906,11 @@ namespace ecommerce_api.Migrations
             modelBuilder.Entity("ecommerce_api.Models.ShopCategory", b =>
                 {
                     b.Navigation("Shops");
+                });
+
+            modelBuilder.Entity("ecommerce_api.Models.ShoppingCart", b =>
+                {
+                    b.Navigation("CartItems");
                 });
 
             modelBuilder.Entity("ecommerce_api.Models.Voucher", b =>
