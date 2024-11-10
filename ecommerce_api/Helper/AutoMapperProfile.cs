@@ -22,5 +22,9 @@ public class AutoMapperProfile : Profile
             .ReverseMap();
         CreateMap<Voucher, VoucherDTO>()
             .ReverseMap();
+        CreateMap<CartItem, CartItemDTO>()
+            .ReverseMap();
+        CreateMap<ShoppingCart, ShoppingCartDTO>()
+            .ReverseMap();
     }
 }

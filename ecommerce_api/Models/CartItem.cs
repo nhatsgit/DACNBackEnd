@@ -15,7 +15,7 @@ namespace ecommerce_api.Models
         public int Quantity { get; set; }
         [JsonIgnore]
         public virtual ShoppingCart ShoppingCart { get; set; } = null!;
-        [JsonIgnore]
+        
         public virtual Product Product { get; set; } = null!;
     }
 }

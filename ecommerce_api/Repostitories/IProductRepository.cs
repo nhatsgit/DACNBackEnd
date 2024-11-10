@@ -9,6 +9,7 @@ namespace ecommerce_api.Repostitories
          Task<IEnumerable<Product>> QueryProducts(string? keyword, int? categoryId,int? brandId,int? shopId, decimal? minPrice, decimal? maxPrice);
          Task<IEnumerable<Product>> GetRandomProducts(int numberOfProducts);
          Task<Product> GetProductById(int id);
+         Task<IEnumerable<ProductImage>> GetProductImagesById(int id);
          Task<Product> AddProduct(Product product);
          Task<Product> DeleteProduct(int id);
          Task<Product> UpdateProduct(int id,Product product);

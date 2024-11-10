@@ -54,24 +54,34 @@ namespace ecommerce_api.Controllers
                 return NotFound();
             }
         }
+        [HttpGet("p{id}")]
 
-        // PUT: api/Products/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, [FromBody] ProductDTO productDto)
+        public async Task<ActionResult> GetProductImage(int id)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             try
             {
                 var product = await _productRepository.GetProductById(id);
-                if (product == null)
-                    throw new KeyNotFoundException("Product not found");
-                _mapper.Map(productDto, product);
-                var updateProduct=await _productRepository.UpdateProduct(id, product);
-                return Ok(_mapper.Map<ProductDTO>(updateProduct));
+                if(product.DaAn==true)
+                {
+                    return NotFound();
+                }
+                return Ok(_mapper.Map<ProductDTO>(product));
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        // PUT: api/Products/5
+        [HttpGet("productImage/{id}")]
+        public async Task<ActionResult> GetProductImages(int id)
+        {
+            try
+            {
+                var productImages = await _productRepository.GetProductImagesById(id);
+                
+                return Ok(productImages);
             }
             catch (KeyNotFoundException)
             {

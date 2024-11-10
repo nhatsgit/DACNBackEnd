@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ecommerce_api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
@@ -42,16 +42,6 @@ builder.Services.AddSwaggerGen(option =>
 	});
 });
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.AllowAnyOrigin()   // Allow any origin
-                   .AllowAnyMethod()   // Allow any HTTP method
-                   .AllowAnyHeader();  // Allow any header
-        });
-});
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<EcomerceDbContext>()
@@ -83,6 +73,17 @@ builder.Services.AddAuthentication(options => {
     };
 });
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()   // Allow any origin
+                   .AllowAnyMethod()   // Allow any HTTP method
+                   .AllowAnyHeader();  // Allow any header
+        });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -91,11 +92,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowAll");
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowAll");
+
+
 app.MapControllers();
 
 app.Run();

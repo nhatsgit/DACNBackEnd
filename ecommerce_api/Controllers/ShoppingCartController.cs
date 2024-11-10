@@ -1,4 +1,5 @@
-﻿using ecommerce_api.DTO;
+﻿using AutoMapper;
+using ecommerce_api.DTO;
 using ecommerce_api.Migrations;
 using ecommerce_api.Models;
 using Microsoft.AspNetCore.Identity;
@@ -14,13 +15,15 @@ namespace ecommerce_api.Controllers
     [ApiController]
     public class ShoppingCartController : ControllerBase
     {
-        private readonly EcomerceDbContext _context; // Đổi thành tên DbContext của bạn
+        private readonly EcomerceDbContext _context;
+        private readonly IMapper _mapper;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public ShoppingCartController(EcomerceDbContext context, UserManager<ApplicationUser> userManager)
+        public ShoppingCartController(EcomerceDbContext context, UserManager<ApplicationUser> userManager, IMapper mapper)
         {
             _context = context;
             _userManager = userManager;
+            _mapper = mapper;
         }
 
         [HttpPost("addtocart")]
@@ -89,8 +92,20 @@ namespace ecommerce_api.Controllers
             {
                 return Unauthorized("User not found.");
             }
-            var mycarts = await _context.ShoppingCart.Where(s => s.UserId == user.Id).Include(s => s.CartItems).ToListAsync();
-            return Ok(mycarts);
+            var mycarts = await _context.ShoppingCart.Where(s => s.UserId == user.Id).Include(s => s.CartItems).ThenInclude(c=>c.Product).Include(s=>s.Shop).ToListAsync();
+            return Ok(_mapper.Map< IEnumerable<ShoppingCartDTO>>(mycarts));
+        }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetCartById(int id)
+        {
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+            var cart = await _context.ShoppingCart.Where(s => s.UserId == user.Id&&s.ShoppingCartId==id).Include(s => s.CartItems).ThenInclude(c=>c.Product).Include(s=>s.Shop).FirstOrDefaultAsync();
+            return Ok(_mapper.Map<ShoppingCartDTO>(cart));
         }
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout([FromQuery]int shoppingCartId,CheckOutDTO model)
@@ -111,7 +126,18 @@ namespace ecommerce_api.Controllers
                 return BadRequest("Invalid  data.");
                 
             }
-            var totalPrice = shoppingCart.CartItems.Sum(ci => ci.Quantity * (ci.Product.GiaBan * (100 - ci.Product.PhanTramGiam??0)/100 )) ;
+            var cartPrice = shoppingCart.CartItems.Sum(ci => ci.Quantity * (ci.Product.GiaBan * (100 - ci.Product.PhanTramGiam??0)/100 )) ;
+            var totalPrice = cartPrice;
+            var voucher=await _context.Vouchers.FirstOrDefaultAsync(v=>v.VoucherId==model.VoucherId);
+            if (voucher!=null&& voucher.VoucherId != 1)
+            {
+                decimal decreasePrice = cartPrice / 100 * voucher.PhanTramGiam;
+                if (decreasePrice > voucher.GiamToiDa && voucher.GiamToiDa > 0)
+                {
+                    decreasePrice = voucher.GiamToiDa ?? decreasePrice;
+                }
+                totalPrice = cartPrice - decreasePrice;
+            }
             var order = new Order
             {
                 OrderDate = DateTime.UtcNow,
@@ -126,6 +152,7 @@ namespace ecommerce_api.Controllers
                 {
                     ProductId = ci.ProductId,
                     Quantity = ci.Quantity,
+                    Price= (ci.Product.GiaBan*(100-ci.Product.PhanTramGiam)/100)?? ci.Product.GiaBan
                 }).ToList()
             };
 

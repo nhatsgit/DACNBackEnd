@@ -121,5 +121,11 @@ namespace ecommerce_api.Repostitories
             var suggestions = products.Take(5).Select(p => p.TenSp);
             return suggestions.ToList();
         }
+
+        public async Task<IEnumerable<ProductImage>> GetProductImagesById(int id)
+        {
+            var productImages=await _context.ProductImages.Where(pi=>pi.ProductId == id).ToListAsync();
+            return productImages;
+        }
     }
 }
