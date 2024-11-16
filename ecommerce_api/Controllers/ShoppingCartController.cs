@@ -2,6 +2,7 @@
 using ecommerce_api.DTO;
 using ecommerce_api.Migrations;
 using ecommerce_api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,8 +26,8 @@ namespace ecommerce_api.Controllers
             _userManager = userManager;
             _mapper = mapper;
         }
-
-        [HttpPost("addtocart")]
+        [Authorize]
+        [HttpPost("addToCart")]
         public async Task<IActionResult> AddToCart([FromBody] AddToCartDto model)
         {
             var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -83,6 +84,7 @@ namespace ecommerce_api.Controllers
 
             return Ok(new { message = "Product added to cart successfully." });
         }
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetMyCarts()
         {
@@ -95,6 +97,7 @@ namespace ecommerce_api.Controllers
             var mycarts = await _context.ShoppingCart.Where(s => s.UserId == user.Id).Include(s => s.CartItems).ThenInclude(c=>c.Product).Include(s=>s.Shop).ToListAsync();
             return Ok(_mapper.Map< IEnumerable<ShoppingCartDTO>>(mycarts));
         }
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCartById(int id)
         {
@@ -107,7 +110,8 @@ namespace ecommerce_api.Controllers
             var cart = await _context.ShoppingCart.Where(s => s.UserId == user.Id&&s.ShoppingCartId==id).Include(s => s.CartItems).ThenInclude(c=>c.Product).Include(s=>s.Shop).FirstOrDefaultAsync();
             return Ok(_mapper.Map<ShoppingCartDTO>(cart));
         }
-        [HttpPost("checkout")]
+        [Authorize]
+        [HttpPost("checkOut")]
         public async Task<IActionResult> Checkout([FromQuery]int shoppingCartId,CheckOutDTO model)
         {
             var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -165,7 +169,7 @@ namespace ecommerce_api.Controllers
             
             return Ok(order);
         }
-
+        [Authorize]
         [HttpPost("deleteItem")]
         public async Task<IActionResult> RemoveCartItem(int cartItemId)
         {
@@ -186,6 +190,21 @@ namespace ecommerce_api.Controllers
 
             return Ok("Deleted");
         }
+        [Authorize]
+        [HttpPost("updateCartItem")]
+        public async Task<IActionResult> UpdateCartItem(AddToCartDto addToCartDto)
+        {
+            var cartItem= await _context.CartItems.Include(c=>c.ShoppingCart).FirstOrDefaultAsync(c=>c.CartItemId== addToCartDto.ProductId);
+            if (cartItem==null|| addToCartDto.Quantity == 0)
+            {
+                return BadRequest("Invalid Data");
+            }
+            
+            cartItem.Quantity= addToCartDto.Quantity;
+            await _context.SaveChangesAsync();
+            return Ok("update successfully");
+        }
+        [Authorize]
         [HttpPost("deleteAll")]
         public async Task<IActionResult> RemoveAllCart()
         {
