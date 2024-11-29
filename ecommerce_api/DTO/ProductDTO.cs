@@ -13,6 +13,8 @@
         public int? PhanTramGiam { get; set; }
         public int? DiemDanhGia { get; set; }
         public string? MaSp { get; set; }
+        public bool DaAn { get; set; }
+
         public int ProductCategoryId { get; set; }
 
         public int BrandId { get; set; }

@@ -41,19 +41,18 @@ namespace ecommerce_api.Controllers
         public async Task<IActionResult> Get(int id)
         {
             var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
             if (userName == null)
             {
                 return Unauthorized();
             }
-            var order = await orderRepository.GetOrderDetail(userName,id);
+            var order = await orderRepository.GetOrderDetailByUser(userName,id);
             if(order == null)
             {
                 return NotFound();
             }
             return Ok(_mapper.Map<OrderDTO>(order));
         }
-        [HttpPost]
+        [HttpPost("Cancel")]
         [Authorize]
         public async Task<IActionResult> CancelOrder(int id)
         {
@@ -69,6 +68,26 @@ namespace ecommerce_api.Controllers
                 return NotFound();
             }
             return Ok("Canceled");
+        }
+        [HttpPost("GiveBack")]
+        [Authorize]
+
+        public async Task<IActionResult> GiveBackOrder(int id)
+        {
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userName == null)
+            {
+                return Unauthorized();
+            }
+            
+
+            var order = await orderRepository.GiveBackOrder(userName, id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+            return Ok("Successs");
         }
     }
 }

@@ -70,12 +70,12 @@ namespace ecommerce_api.Repostitories
             var result= await _userManager.CreateAsync(user,registerModel.Password);
             if (result.Succeeded)
             {
-                if (!await roleManager.RoleExistsAsync("Customer"))
+                if (!await roleManager.RoleExistsAsync("ShopOwner"))
                 {
-                    await roleManager.CreateAsync(new IdentityRole("Customer"));
+                    await roleManager.CreateAsync(new IdentityRole("ShopOwner"));
                 }
 
-                await _userManager.AddToRoleAsync(user, "Customer");
+                await _userManager.AddToRoleAsync(user, "ShopOwner");
             }
             return result;
         }

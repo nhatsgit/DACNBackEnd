@@ -33,7 +33,9 @@ namespace ecommerce_api.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
+
             var shop = await _context.Shops.Where(c => c.ShopId == id).FirstOrDefaultAsync();
+
             return Ok(shop);
         }
 

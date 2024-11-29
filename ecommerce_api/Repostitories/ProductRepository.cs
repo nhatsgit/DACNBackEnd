@@ -1,12 +1,13 @@
 ﻿using AutoMapper;
 using ecommerce_api.DTO;
+using ecommerce_api.Helper;
 using ecommerce_api.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 
 namespace ecommerce_api.Repostitories
 {
-    public class ProductRepository:IProductRepository
+    public class ProductRepository : IProductRepository
     {
         private readonly EcomerceDbContext _context;
 
@@ -34,11 +35,31 @@ namespace ecommerce_api.Repostitories
                 throw new KeyNotFoundException("Product not found");
             return product;
         }
-        public async Task<Product> AddProduct(Product product)
+        public async Task<Product> AddProduct(Product product, List<IFormFile> listImages)
         {
             
             await _context.Products.AddAsync(product);
             await _context.SaveChangesAsync();
+            if (listImages != null)
+            {
+                foreach (var file in listImages)
+                {
+                    if (file.Length > 0)
+                    {
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await file.CopyToAsync(memoryStream);
+                            var image = new ProductImage
+                            {
+                                Url = await UploadImage.SaveImage(file),
+                                ProductId = product.ProductId
+                            };
+                            _context.ProductImages.Add(image);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                }
+            }
 
             return product;  
         }
@@ -64,13 +85,12 @@ namespace ecommerce_api.Repostitories
             await _context.SaveChangesAsync();
             return product; 
         }
-        public async Task<IEnumerable<Product>> QueryProducts(string? keyword, int? categoryId=null,int? brandId=null,int? shopId = null, decimal? minPrice=null, decimal? maxPrice=null)
+        public async Task<IEnumerable<Product>> QueryProducts(string? keyword, int? categoryId=null,int? brandId=null,int? shopId = null, decimal? minPrice=null, decimal? maxPrice=null, bool? daAn=null, bool? daHet=null)
         {
             var query = _context.Products
                 .Include(p => p.ProductCategory)
                 .Include(p => p.Shop)
                 .Include(p => p.Brand)
-                .Where(p => p.DaAn == false) 
                 .AsQueryable();
 
   
@@ -98,8 +118,23 @@ namespace ecommerce_api.Repostitories
             {
                 query = query.Where(p => p.GiaBan <= maxPrice.Value);
             }
+            if (daAn.HasValue)
+            {
+                query = query.Where(p => p.DaAn==daAn.Value);
+            }
+            if (daHet.HasValue)
+            {
+                if (daHet.Value)
+                {
+                    query = query.Where(p => p.SoLuongCon <= 0);
+                }
+                else
+                {
+                    query = query.Where(p => p.SoLuongCon > 0);
 
-           
+                }
+            }
+
             var products = await query.OrderBy(p=>p.ProductId).ToListAsync();
             return products;
         }
@@ -126,6 +161,16 @@ namespace ecommerce_api.Repostitories
         {
             var productImages=await _context.ProductImages.Where(pi=>pi.ProductId == id).ToListAsync();
             return productImages;
+        }
+
+        public async Task<IEnumerable<Category>> GetCategoryFromQuerry(string? keyword, int? brandId, int? shopId, decimal? minPrice, decimal? maxPrice, bool? daAn, bool? daHet)
+        {
+            var products = await QueryProducts(keyword,null, brandId, shopId, minPrice, maxPrice,daAn,daHet);
+            var categoryIds=products.Select(p => p.ProductCategoryId).Distinct().ToList();
+            var categories = await _context.Categories
+            .Where(c => categoryIds.Contains(c.ProductCategoryId)) 
+            .ToListAsync(); 
+            return categories;
         }
     }
 }

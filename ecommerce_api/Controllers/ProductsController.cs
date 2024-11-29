@@ -11,6 +11,7 @@ using ecommerce_api.Repostitories;
 using ecommerce_api.DTO;
 using X.PagedList;
 using AutoMapper;
+using ecommerce_api.Migrations;
 
 namespace ecommerce_api.Controllers
 {
@@ -54,24 +55,7 @@ namespace ecommerce_api.Controllers
                 return NotFound();
             }
         }
-        [HttpGet("p{id}")]
 
-        public async Task<ActionResult> GetProductImage(int id)
-        {
-            try
-            {
-                var product = await _productRepository.GetProductById(id);
-                if(product.DaAn==true)
-                {
-                    return NotFound();
-                }
-                return Ok(_mapper.Map<ProductDTO>(product));
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-        }
 
         // PUT: api/Products/5
         [HttpGet("productImage/{id}")]
@@ -89,49 +73,42 @@ namespace ecommerce_api.Controllers
             }
         }
 
-        // POST: api/Products
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct([FromBody] ProductDTO productDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var product = _mapper.Map<Product>(productDto);
-            var createdProduct = await _productRepository.AddProduct(product);
-            return CreatedAtAction(nameof(GetProduct), new { id = createdProduct.ProductId }, createdProduct);
-        }
-
-        // DELETE: api/Products/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
-        {
-            try
-            {
-                var product = await _productRepository.DeleteProduct(id);
-
-                return Ok(_mapper.Map<ProductDTO>(product));
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-        }
         [HttpGet("query")]
         public async Task<IActionResult> QueryProducts(
             [FromQuery] string? keyword, [FromQuery] int? categoryId,
             [FromQuery] int? brandId,[FromQuery] int? shopId, 
-            [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, 
+            [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice,
+            [FromQuery] bool? daAn = false, [FromQuery] bool? daHet=false,
             [FromQuery] int pageNumber=1 , [FromQuery] int pageSize = 10)
         {
-            var products = await _productRepository.QueryProducts( keyword, categoryId,brandId,shopId, minPrice, maxPrice) ;
+            var products = await _productRepository.QueryProducts( keyword, categoryId,brandId,shopId, minPrice, maxPrice, daAn, daHet) ;
             
             if (products == null || !products.Any())
             {
                 return NotFound("No products found matching your search criteria.");
             }
             return Ok(new PagedListDTO<ProductDTO>(_mapper.Map<IEnumerable<ProductDTO>>(products).ToPagedList(pageNumber,pageSize)));
+        }
+        [HttpGet("getCategoriesFromQuerry")]
+        public async Task<IActionResult> GetCategories(
+            [FromQuery] string? keyword,
+            [FromQuery] int? brandId,[FromQuery] int? shopId, 
+            [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice,
+            [FromQuery] bool? daAn=false, [FromQuery] bool? daHet=false)
+        {
+            var categories = await _productRepository.GetCategoryFromQuerry(keyword,brandId,shopId, minPrice, maxPrice, daAn, daHet) ;
+            
+            if (categories == null || !categories.Any())
+            {
+                return NotFound("No categories found matching your search criteria.");
+            }
+            var result=categories.Select(c => new
+            {
+                id = c.ProductCategoryId,
+                tenLoai = c.TenLoai
+            })
+            .ToList();
+            return Ok(result);
         }
         [HttpGet("searchSuggestions")]
         public async Task<List<string>> SearchSuggestions([FromQuery] string keyword)

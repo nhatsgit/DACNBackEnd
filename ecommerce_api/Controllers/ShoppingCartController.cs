@@ -141,6 +141,16 @@ namespace ecommerce_api.Controllers
                     decreasePrice = voucher.GiamToiDa ?? decreasePrice;
                 }
                 totalPrice = cartPrice - decreasePrice;
+                voucher.SoLuongCon--;
+            }
+            foreach (var item in shoppingCart.CartItems)
+            {
+                Product _product = _context.Products.FirstOrDefault(p => p.ProductId == item.ProductId);
+                if (_product.SoLuongCon > 0)
+                {
+                    _product.SoLuongCon -= (int)item.Quantity;
+                }
+
             }
             var order = new Order
             {
