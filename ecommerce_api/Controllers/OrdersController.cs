@@ -13,6 +13,8 @@ namespace ecommerce_api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Customer,Developer")]
+
     public class OrdersController : ControllerBase
     {
         private readonly IOrderRepository orderRepository;
@@ -48,7 +50,7 @@ namespace ecommerce_api.Controllers
             var order = await orderRepository.GetOrderDetailByUser(userName,id);
             if(order == null)
             {
-                return NotFound();
+                return BadRequest();
             }
             return Ok(_mapper.Map<OrderDTO>(order));
         }

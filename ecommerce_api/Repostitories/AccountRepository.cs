@@ -1,4 +1,5 @@
-﻿using ecommerce_api.Models;
+﻿using ecommerce_api.Helper;
+using ecommerce_api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -58,7 +59,7 @@ namespace ecommerce_api.Repostitories
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<IdentityResult> Register(RegisterModel registerModel)
+        public async Task<IdentityResult> Register(RegisterModel registerModel, IFormFile? avatarImage)
         {
             var user = new ApplicationUser {
                 UserName=registerModel.UserName,
@@ -67,21 +68,34 @@ namespace ecommerce_api.Repostitories
                 Email = registerModel.Email,
                 PhoneNumber = registerModel.PhoneNumber,
             };
+            if (avatarImage != null)
+            {
+                user.Avatar = await UploadImage.SaveImage(avatarImage);
+            }
+            else
+            {
+                user.Avatar = "/images/avatar_default.png";
+            }
             var result= await _userManager.CreateAsync(user,registerModel.Password);
             if (result.Succeeded)
             {
-                if (!await roleManager.RoleExistsAsync("ShopOwner"))
+                if (!await roleManager.RoleExistsAsync("Customer"))
                 {
-                    await roleManager.CreateAsync(new IdentityRole("ShopOwner"));
+                    await roleManager.CreateAsync(new IdentityRole("Customer"));
                 }
 
-                await _userManager.AddToRoleAsync(user, "ShopOwner");
+                await _userManager.AddToRoleAsync(user, "Customer");
             }
             return result;
         }
         public async Task<ApplicationUser> GetCurrentUserAsync(string userId)
         {
             return await _userManager.FindByNameAsync(userId);
+        }
+
+        public async Task<IdentityResult> SaveChangesUser(ApplicationUser user)
+        {
+            return await _userManager.UpdateAsync(user);
         }
     }
 }

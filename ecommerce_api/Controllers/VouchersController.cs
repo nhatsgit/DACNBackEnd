@@ -20,9 +20,11 @@ namespace ecommerce_api.Controllers
             _mapper = mapper;
         }
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> GetVouchersCanUse(int shopId)
         {
-            var categories = await _context.Vouchers.ToListAsync();
+            var categories = _context.Vouchers
+                .Where(v => v.SoLuongCon > 0 && v.NgayHetHan > DateTime.Now && (v.NgayBatDau <= DateTime.Now || v.NgayBatDau == null) && (v.ShopId == shopId || v.ShopId == null))
+                .Include(v => v.VoucherCategory);
             return Ok(_mapper.Map<IEnumerable<VoucherDTO>>(categories));
         }
 
@@ -34,23 +36,6 @@ namespace ecommerce_api.Controllers
             return Ok(_mapper.Map<VoucherDTO>(category));
         }
 
-        // POST api/<VouchersController>
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody] string value)
-        {
-            return Ok();
-        }
-
-        // PUT api/<VouchersController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<VouchersController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+        
     }
 }

@@ -30,6 +30,9 @@ namespace ecommerce_api.Repostitories
             var product = await _context.Products
                 .Include(p => p.ProductCategory)
                 .Include(p => p.Brand)
+                .Include (p => p.ProductImages)
+                .Include (p => p.Reviews)
+                .Include(p=>p.Shop)
                 .FirstOrDefaultAsync(p => p.ProductId == id);
             if (product == null)
                 throw new KeyNotFoundException("Product not found");
@@ -64,7 +67,7 @@ namespace ecommerce_api.Repostitories
             return product;  
         }
 
-        public async Task<Product> DeleteProduct(int id)
+        public async Task<Product> SwapHideShowProduct(int id)
         {
             var product = await _context.Products
                 .Include(p => p.ProductCategory)
@@ -72,15 +75,41 @@ namespace ecommerce_api.Repostitories
                 .FirstOrDefaultAsync(p => p.ProductId == id);
             if (product == null)
                 throw new KeyNotFoundException("Product not found");
-            product.DaAn = true;
+            product.DaAn = !product.DaAn;
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
             return product;
         }
 
-        public async Task<Product> UpdateProduct(int id, Product product)
+        public async Task<Product> UpdateProduct(int id, Product product, List<IFormFile> listImages)
         {
-              
+            if (listImages.Count > 0)
+            {
+                var imagesToDelete = _context.ProductImages.Where(p => p.ProductId == product.ProductId);
+
+                if (imagesToDelete.Any())
+                {
+                    _context.ProductImages.RemoveRange(imagesToDelete);
+                    await _context.SaveChangesAsync();
+                }
+                foreach (var file in listImages)
+                {
+                    if (file.Length > 0)
+                    {
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await file.CopyToAsync(memoryStream);
+                            var image = new ProductImage
+                            {
+                                Url = await UploadImage.SaveImage(file),
+                                ProductId = product.ProductId
+                            };
+                            _context.ProductImages.Add(image);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                }
+            }
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
             return product; 
@@ -135,14 +164,15 @@ namespace ecommerce_api.Repostitories
                 }
             }
 
-            var products = await query.OrderBy(p=>p.ProductId).ToListAsync();
+            var products = await query.OrderByDescending(p=>p.ProductId).ToListAsync();
             return products;
         }
         public async Task<IEnumerable<Product>> GetRandomProducts(int numberOfProducts)
         {
             var products = await _context.Products
                 .Include(p => p.ProductCategory)
-                .Where(p => p.DaAn == false) 
+                .Include(p=>p.Shop)
+                .Where(p => p.DaAn != true&&p.Shop.BiChan!=true) 
                 .OrderBy(p => Guid.NewGuid())
                 .Take(numberOfProducts) 
                 .ToListAsync();

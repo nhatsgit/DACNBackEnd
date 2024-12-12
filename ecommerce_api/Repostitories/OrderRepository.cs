@@ -40,7 +40,7 @@ namespace ecommerce_api.Repostitories
             return order;
         }
 
-        public async Task<IEnumerable<Order>> FilterOrders(string? userName, int? statusId, int? shopId)
+        public async Task<IEnumerable<Order>> FilterOrders(string? userName, int? statusId, int? shopId,DateTime? date)
         {
             var query = _context.Orders
                 .Include(p => p.OrderStatus)
@@ -63,9 +63,15 @@ namespace ecommerce_api.Repostitories
             {
                 query = query.Where(p => p.OrderStatusId ==statusId);
             }
-           
+            if (date.HasValue)
+            {
+                var startOfDay = date.Value.Date;
+                var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
+                query = query.Where(p => p.OrderDate >= startOfDay && p.OrderDate <= endOfDay);
+            }
 
-            var orders = await query.OrderBy(p => p.OrderId).ToListAsync();
+
+            var orders = await query.OrderByDescending(p => p.OrderId).ToListAsync();
             return orders;
         }
 
@@ -110,6 +116,7 @@ namespace ecommerce_api.Repostitories
                 .Include(o=>o.OrderStatus)
                 .Include(o=>o.Voucher)
                 .Include(o=>o.User)
+                .OrderByDescending(p => p.OrderId)
                 .ToListAsync();
         }
 

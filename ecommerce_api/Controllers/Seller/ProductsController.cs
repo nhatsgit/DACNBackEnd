@@ -47,7 +47,7 @@ namespace ecommerce_api.Controllers.Seller
                 var product = await _productRepository.GetProductById(id);
                 if (product.ShopId!=user.ShopId)
                 {
-                    return NotFound();
+                    return BadRequest();
                 }
                 return Ok(product);
             }
@@ -59,52 +59,15 @@ namespace ecommerce_api.Controllers.Seller
 
 
 
-        // POST: api/Products
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct([FromForm] ProductDTO productDto, IFormFile anhDaiDien, List<IFormFile> listImages)
-        {
-            // Kiểm tra dữ liệu
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
-            // Lấy tên đăng nhập từ Claim
-            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userName == null)
-            {
-                return Unauthorized();
-            }
-
-            // Lấy thông tin user
-            var user = await _accountRepository.GetCurrentUserAsync(userName);
-            if (user?.ShopId == null)
-            {
-                return BadRequest("Người dùng không thuộc shop nào.");
-            }
-
-            productDto.ShopId = user.ShopId.Value;
-
-            if (anhDaiDien != null)
-            {
-                productDto.AnhDaiDien = await UploadImage.SaveImage(anhDaiDien);
-            }
-
-            // Map DTO sang Entity và lưu sản phẩm
-            var product = _mapper.Map<Product>(productDto);
-            var createdProduct = await _productRepository.AddProduct(product,listImages);
-
-            return Ok(createdProduct);
-        }
-
+        
         // DELETE: api/Products/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        public async Task<IActionResult> _SwapHideShowProduct(int id)
         {
             try
             {
-                var product = await _productRepository.DeleteProduct(id);
+                var product = await _productRepository.SwapHideShowProduct(id);
 
                 return Ok(_mapper.Map<ProductDTO>(product));
             }
@@ -157,14 +120,18 @@ namespace ecommerce_api.Controllers.Seller
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDTO product)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDTO product, List<IFormFile> listImages, IFormFile? anhDaiDien = null)
         {
             if (product == null || id != product.ProductId)
             {
                 return BadRequest("Thông tin sản phẩm không hợp lệ.");
             }
+            if (anhDaiDien != null)
+            {
+                product.AnhDaiDien = await UploadImage.SaveImage(anhDaiDien);
+            }
             var productMap = _mapper.Map<Product>(product);
-            var updatedProduct = await _productRepository.UpdateProduct(id, productMap);
+            var updatedProduct = await _productRepository.UpdateProduct(id, productMap, listImages);
 
             if (updatedProduct == null)
             {
@@ -173,6 +140,41 @@ namespace ecommerce_api.Controllers.Seller
 
             return Ok("Cập nhật sản phẩm thành công");
         }
+        [HttpPost]
+        public async Task<ActionResult<Product>> PostProduct([FromForm] ProductDTO productDto, IFormFile anhDaiDien, List<IFormFile> listImages)
+        {
+          
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userName == null)
+            {
+                return Unauthorized();
+            }
+            var user = await _accountRepository.GetCurrentUserAsync(userName);
+            if (user?.ShopId == null)
+            {
+                return BadRequest("Người dùng không thuộc shop nào.");
+            }
+
+            productDto.ShopId = user.ShopId.Value;
+
+            if (anhDaiDien != null)
+            {
+                productDto.AnhDaiDien = await UploadImage.SaveImage(anhDaiDien);
+            }
+
+            // Map DTO sang Entity và lưu sản phẩm
+            var product = _mapper.Map<Product>(productDto);
+            var createdProduct = await _productRepository.AddProduct(product, listImages);
+
+            return Ok(createdProduct);
+        }
+
 
     }
 }

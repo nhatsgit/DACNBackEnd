@@ -15,7 +15,6 @@ public partial class Voucher
     public DateTime NgayHetHan { get; set; }
 
     public int SoLuongCon { get; set; }
-    [JsonIgnore]
 
     public int VoucherCategoryId { get; set; }
 

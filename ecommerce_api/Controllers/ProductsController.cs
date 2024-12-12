@@ -44,9 +44,9 @@ namespace ecommerce_api.Controllers
             try
             {
                 var product = await _productRepository.GetProductById(id);
-                if(product.DaAn==true)
+                if(product.DaAn==true||product.Shop.BiChan==true)
                 {
-                    return NotFound();
+                    return BadRequest();
                 }
                 return Ok(_mapper.Map<ProductDTO>(product));
             }
@@ -82,12 +82,12 @@ namespace ecommerce_api.Controllers
             [FromQuery] int pageNumber=1 , [FromQuery] int pageSize = 10)
         {
             var products = await _productRepository.QueryProducts( keyword, categoryId,brandId,shopId, minPrice, maxPrice, daAn, daHet) ;
-            
-            if (products == null || !products.Any())
+            var result=products.Where(p=>p.Shop.BiChan!=true).ToList();
+            if (result == null || !result.Any())
             {
                 return NotFound("No products found matching your search criteria.");
             }
-            return Ok(new PagedListDTO<ProductDTO>(_mapper.Map<IEnumerable<ProductDTO>>(products).ToPagedList(pageNumber,pageSize)));
+            return Ok(new PagedListDTO<ProductDTO>(_mapper.Map<IEnumerable<ProductDTO>>(result).ToPagedList(pageNumber,pageSize)));
         }
         [HttpGet("getCategoriesFromQuerry")]
         public async Task<IActionResult> GetCategories(

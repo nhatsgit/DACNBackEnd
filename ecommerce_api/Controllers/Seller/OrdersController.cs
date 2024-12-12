@@ -29,7 +29,7 @@ namespace ecommerce_api.Controllers.Seller
 
         }
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5)
+        public async Task<IActionResult> Get([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5, [FromQuery] DateTime? date = null)
         {
             var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userName == null)
@@ -37,7 +37,7 @@ namespace ecommerce_api.Controllers.Seller
                 return Unauthorized();
             }
             var user = await _accountRepository.GetCurrentUserAsync(userName);
-            var orders = await orderRepository.FilterOrders(null, null, user.ShopId);
+            var orders = await orderRepository.FilterOrders(null, null, user.ShopId,date);
 
             return Ok(new PagedListDTO<OrderDTO>(_mapper.Map<IEnumerable<OrderDTO>>(orders).ToPagedList(pageNumber, pageSize)));
         }
@@ -50,7 +50,7 @@ namespace ecommerce_api.Controllers.Seller
                 return Unauthorized();
             }
             var user = await _accountRepository.GetCurrentUserAsync(userName);
-            var orders = await orderRepository.FilterOrders(null,1,user.ShopId);
+            var orders = await orderRepository.FilterOrders(null,1,user.ShopId,null);
 
             return Ok(new PagedListDTO<OrderDTO>(_mapper.Map<IEnumerable<OrderDTO>>(orders).ToPagedList(pageNumber, pageSize)));
         }
@@ -63,7 +63,7 @@ namespace ecommerce_api.Controllers.Seller
                 return Unauthorized();
             }
             var user = await _accountRepository.GetCurrentUserAsync(userName);
-            var orders = await orderRepository.FilterOrders(null,6,user.ShopId);
+            var orders = await orderRepository.FilterOrders(null,6,user.ShopId,null);
 
             return Ok(new PagedListDTO<OrderDTO>(_mapper.Map<IEnumerable<OrderDTO>>(orders).ToPagedList(pageNumber, pageSize)));
         }
@@ -76,7 +76,7 @@ namespace ecommerce_api.Controllers.Seller
                 return Unauthorized();
             }
             var user = await _accountRepository.GetCurrentUserAsync(userName);
-            var orders = await orderRepository.FilterOrders(null,9,user.ShopId);
+            var orders = await orderRepository.FilterOrders(null,9,user.ShopId, null);
 
             return Ok(new PagedListDTO<OrderDTO>(_mapper.Map<IEnumerable<OrderDTO>>(orders).ToPagedList(pageNumber, pageSize)));
         }
@@ -89,7 +89,7 @@ namespace ecommerce_api.Controllers.Seller
                 return Unauthorized();
             }
             var user = await _accountRepository.GetCurrentUserAsync(userName);
-            var orders = await orderRepository.FilterOrders(null, 11, user.ShopId);
+            var orders = await orderRepository.FilterOrders(null, 11, user.ShopId, null);
 
             return Ok(new PagedListDTO<OrderDTO>(_mapper.Map<IEnumerable<OrderDTO>>(orders).ToPagedList(pageNumber, pageSize)));
         }[HttpGet("Canceled")]
@@ -101,7 +101,7 @@ namespace ecommerce_api.Controllers.Seller
                 return Unauthorized();
             }
             var user = await _accountRepository.GetCurrentUserAsync(userName);
-            var orders = await orderRepository.FilterOrders(null, 6, user.ShopId);
+            var orders = await orderRepository.FilterOrders(null, 6, user.ShopId,null);
 
             return Ok(new PagedListDTO<OrderDTO>(_mapper.Map<IEnumerable<OrderDTO>>(orders).ToPagedList(pageNumber, pageSize)));
         }
@@ -115,11 +115,14 @@ namespace ecommerce_api.Controllers.Seller
                 return Unauthorized();
             }
             var user = await _accountRepository.GetCurrentUserAsync(userName);
-
+            if (user?.ShopId == null)
+            {
+                return BadRequest("Người dùng không thuộc shop nào.");
+            }
             var order = await orderRepository.GetOrderDetailByShop(user.ShopId??0, id);
             if (order == null)
             {
-                return NotFound();
+                return BadRequest();
             }
             return Ok(_mapper.Map<OrderDTO>(order));
         }
@@ -134,7 +137,10 @@ namespace ecommerce_api.Controllers.Seller
                 return Unauthorized();
             }
             var user = await _accountRepository.GetCurrentUserAsync(userName);
-
+            if (user?.ShopId == null)
+            {
+                return BadRequest("Người dùng không thuộc shop nào.");
+            }
             var order = await orderRepository.UpdateStatus(user.ShopId ?? 0, orderId);
             
             if (order == null)

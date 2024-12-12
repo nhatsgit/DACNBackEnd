@@ -26,5 +26,7 @@ public class AutoMapperProfile : Profile
             .ReverseMap();
         CreateMap<ShoppingCart, ShoppingCartDTO>()
             .ReverseMap();
+        CreateMap<Shop, ShopDTO>()
+            .ReverseMap();
     }
 }

@@ -14,6 +14,9 @@ namespace ecommerce_api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Customer,Developer")]
+
+
     public class ShoppingCartController : ControllerBase
     {
         private readonly EcomerceDbContext _context;
@@ -94,8 +97,18 @@ namespace ecommerce_api.Controllers
             {
                 return Unauthorized("User not found.");
             }
-            var mycarts = await _context.ShoppingCart.Where(s => s.UserId == user.Id).Include(s => s.CartItems).ThenInclude(c=>c.Product).Include(s=>s.Shop).ToListAsync();
-            return Ok(_mapper.Map< IEnumerable<ShoppingCartDTO>>(mycarts));
+            var mycarts = await _context.ShoppingCart.Where(s => s.UserId == user.Id).Include(s => s.CartItems).ThenInclude(c => c.Product).Include(s => s.Shop).ToListAsync();
+            return Ok(_mapper.Map<IEnumerable<ShoppingCartDTO>>(mycarts));
+        }
+        [Authorize]
+        [HttpGet("Vouchers")]
+        public async Task<IActionResult> GetVouchers(int shopId)
+        {
+            var vouchers = await _context.Vouchers
+                .Where(v => v.SoLuongCon > 0 && v.NgayHetHan > DateTime.Now && (v.NgayBatDau <= DateTime.Now || v.NgayBatDau == null) && (v.ShopId == shopId || v.ShopId == null))
+                .ToListAsync();
+           
+            return Ok(vouchers);
         }
         [Authorize]
         [HttpGet("{id}")]
@@ -108,6 +121,10 @@ namespace ecommerce_api.Controllers
                 return Unauthorized("User not found.");
             }
             var cart = await _context.ShoppingCart.Where(s => s.UserId == user.Id&&s.ShoppingCartId==id).Include(s => s.CartItems).ThenInclude(c=>c.Product).Include(s=>s.Shop).FirstOrDefaultAsync();
+            if (cart == null)
+            {
+                return BadRequest();
+            }
             return Ok(_mapper.Map<ShoppingCartDTO>(cart));
         }
         [Authorize]
@@ -238,6 +255,7 @@ namespace ecommerce_api.Controllers
 
             return Ok("Deleted");
         }
+
 
     }
 }

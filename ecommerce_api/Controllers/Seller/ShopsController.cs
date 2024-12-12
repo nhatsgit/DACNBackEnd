@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using ecommerce_api.DTO;
+using ecommerce_api.Helper;
 using ecommerce_api.Models;
 using ecommerce_api.Repostitories;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +17,7 @@ namespace ecommerce_api.Controllers.Seller
 {
     [Route("api/seller/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Developer,ShopOwner")]
+    [Authorize(Roles = "Developer,ShopOwner,ShopStaff")]
     public class ShopsController : ControllerBase
     {
         // GET: api/<ShopsController>
@@ -47,70 +49,44 @@ namespace ecommerce_api.Controllers.Seller
             return Ok(shop);
         }
 
-        // GET api/<ShopsController>/5
-        
 
-        // POST api/<ShopsController>
-        [HttpPost]
-        public void Post([FromBody] string value)
+        [HttpPut("edit")]
+        public async Task<IActionResult> Edit([FromForm] ShopDTO shopDTO, IFormFile? imageAvatar=null, IFormFile? imageBackground=null)
         {
-        }
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        [HttpPost("haha")]
-        public async Task<IActionResult> Edit( IFormFile imageAvatar, IFormFile imageBackground)
-        {
-            /*if (seller == null)
+            if (userName == null)
             {
-                seller = await _userManager.GetUserAsync(User);
+                return Unauthorized();
             }
-            int id = seller.ShopId ?? 0;*/
-            /*if (id == 0)
+            var user = await _accountRepository.GetCurrentUserAsync(userName);
+            if (user?.ShopId == null)
             {
-                return NotFound();
+                return BadRequest("Người dùng không thuộc shop nào.");
             }
-            if (id != shop.ShopId)
-            {
-                return NotFound();
-            }
+            shopDTO.ShopId=user.ShopId.Value;
+
             try
             {
                 if (imageAvatar != null)
                 {
-                    shop.AnhDaiDien = await UploadImage.SaveImage(imageAvatar);
+                    shopDTO.AnhDaiDien = await UploadImage.SaveImage(imageAvatar);
                 }
 
                 if (imageBackground != null)
                 {
-                    shop.AnhBia = await UploadImage.SaveImage(imageBackground);
+                    shopDTO.AnhBia = await UploadImage.SaveImage(imageBackground);
                 }
-                if (specificAddress != null && address != null)
-                {
-                    shop.DiaChi = specificAddress + ", " + address;
-                }
+                var shop=_mapper.Map<Shop>(shopDTO);
                 _context.Update(shop);
                 await _context.SaveChangesAsync();
-                return RedirectToAction("Edit", "Shops");
+                return Ok("cập nhật thành công");
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ShopExists(shop.ShopId))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return BadRequest("đã xảy ra lỗi");
             }
-            ViewData["ShopCategoryId"] = new SelectList(_context.ShopCategories, "ShopCategoryId", "ShopCategoryId", shop.ShopCategoryId);
-            return View(shop);*/
-            return Ok("xx");
         }
 
-        // DELETE api/<ShopsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
     }
 }

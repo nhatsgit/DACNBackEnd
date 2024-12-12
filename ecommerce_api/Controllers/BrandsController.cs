@@ -37,22 +37,6 @@ namespace ecommerce_api.Controllers
             return Ok(_mapper.Map<BrandDTO>(brand));
         }
 
-        // POST api/<BrandsController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
 
-        // PUT api/<BrandsController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<BrandsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
     }
 }

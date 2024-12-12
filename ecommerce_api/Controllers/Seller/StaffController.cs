@@ -106,5 +106,49 @@ namespace ecommerce_api.Controllers.Seller
 
             return BadRequest("Đăng Ký Không Thành Công");
         }
+        [HttpPost("DisableStaff")]
+        public async Task<IActionResult> DeleteStaff(string userName)
+        {
+            var staff = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+            if (staff == null)
+            {
+                return NotFound();
+            }
+            staff.ShopId = null;
+            await _context.SaveChangesAsync();
+            return Ok("Thành công");
+        }
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetStaffPassword(string userName)
+        {
+            if (string.IsNullOrEmpty(userName))
+            {
+                return BadRequest("User ID is required.");
+            }
+            var currentUserName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (currentUserName == null)
+            {
+                return Unauthorized();
+            }
+            var seller = await _accountRepository.GetCurrentUserAsync(userName);
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+
+            if (user == null||user.ShopId!=seller.ShopId)
+            {
+                return NotFound("User not found.");
+            }
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, "P@55W0rd");
+
+            if (result.Succeeded)
+            {
+
+                return Ok("reset thành công");
+            }
+
+            return BadRequest(result.Errors);
+        }
     }
 }

@@ -18,10 +18,10 @@ public partial class Review
     public string CustomerId { get; set; } = null!;
 
     public int ProductId { get; set; }
-    [JsonIgnore]
+    
     public virtual ApplicationUser Customer { get; set; } = null!;
     [JsonIgnore]
     public virtual Product Product { get; set; } = null!;
-    [JsonIgnore]
+    
     public virtual ICollection<ReviewsImage> ReviewsImages { get; set; } = new List<ReviewsImage>();
 }

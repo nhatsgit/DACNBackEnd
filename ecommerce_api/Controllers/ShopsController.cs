@@ -28,8 +28,6 @@ namespace ecommerce_api.Controllers
             var shops = await _context.Shops.ToListAsync();
             return Ok(shops);
         }
-
-
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
@@ -38,23 +36,11 @@ namespace ecommerce_api.Controllers
 
             return Ok(shop);
         }
-
-        // POST api/<ShopsController>
-        [HttpPost]
-        public void Post([FromBody] string value)
+        [HttpGet("category")]
+        public async Task<IActionResult> GetCategory()
         {
-        }
-
-        // PUT api/<ShopsController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<ShopsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            var shopCategory = await _context.ShopCategories.ToListAsync();
+            return Ok(shopCategory);
         }
     }
 }

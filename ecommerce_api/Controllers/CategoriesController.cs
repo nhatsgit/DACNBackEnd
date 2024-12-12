@@ -37,36 +37,5 @@ namespace ecommerce_api.Controllers
             return Ok(_mapper.Map<CategoryDTO>(category));
         }
 
-        // POST api/<CategoriesController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<CategoriesController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<CategoriesController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
-        [HttpGet("page")]
-        public async Task<IActionResult> GetProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        {
-            if (pageNumber <= 0 || pageSize <= 0)
-            {
-                return BadRequest("Số trang và kích thước lớn hơn 0");
-            }
-
-            var products = await _context.Products.ToListAsync();
-            
-            var pDTO = _mapper.Map<IEnumerable<ProductDTO>>(products).ToPagedList(pageNumber,pageSize);
-            var pO = new PagedListDTO<ProductDTO>(pDTO);
-            return Ok(pO); 
-        }
     }
 }
