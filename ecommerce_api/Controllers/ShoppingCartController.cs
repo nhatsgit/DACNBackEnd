@@ -2,6 +2,7 @@
 using ecommerce_api.DTO;
 using ecommerce_api.Migrations;
 using ecommerce_api.Models;
+using ecommerce_api.Services.VNPAY;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,12 +23,15 @@ namespace ecommerce_api.Controllers
         private readonly EcomerceDbContext _context;
         private readonly IMapper _mapper;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IVnPayService _vnPayservice;
 
-        public ShoppingCartController(EcomerceDbContext context, UserManager<ApplicationUser> userManager, IMapper mapper)
+        public ShoppingCartController(EcomerceDbContext context, UserManager<ApplicationUser> userManager, IMapper mapper, IVnPayService vnPayservice)
         {
             _context = context;
             _userManager = userManager;
             _mapper = mapper;
+            _vnPayservice = vnPayservice;
+
         }
         [Authorize]
         [HttpPost("addToCart")]
@@ -131,6 +135,7 @@ namespace ecommerce_api.Controllers
         [HttpPost("checkOut")]
         public async Task<IActionResult> Checkout([FromQuery]int shoppingCartId,CheckOutDTO model)
         {
+            
             var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _userManager.FindByNameAsync(userName);
             if (user == null)
@@ -186,7 +191,20 @@ namespace ecommerce_api.Controllers
                     Price= (ci.Product.GiaBan*(100-ci.Product.PhanTramGiam)/100)?? ci.Product.GiaBan
                 }).ToList()
             };
-
+            /*if (order.PaymentId == 2)
+            {
+                var vnPayModel = new VnPaymentRequestModel
+                {
+                    Amount = (double)totalPrice,
+                    CreatedDate = DateTime.Now,
+                    OrderId = new Random().Next(1000, 100000),
+                    CheckOutDTO = model,
+                    shoppingCartId=shoppingCartId
+                    
+                };
+               
+                return Ok(_vnPayservice.CreatePaymentUrl(HttpContext, vnPayModel));
+            }*/
             _context.Orders.Add(order);
             _context.CartItems.RemoveRange(shoppingCart.CartItems);
             _context.ShoppingCart.Remove(shoppingCart);
@@ -195,6 +213,66 @@ namespace ecommerce_api.Controllers
 
             
             return Ok(order);
+        }
+        [HttpGet("return")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PaymentCallBack()
+        {
+            var response = _vnPayservice.PaymentExecute(Request.Query);
+            var parameters = response.OrderDescription.Split('&');
+
+            int shoppingCartId = 0;
+            int voucherId = 0;
+            string shippingAddress = string.Empty;
+
+            // Lặp qua từng tham số và phân tích giá trị
+            foreach (var parameter in parameters)
+            {
+                var keyValue = parameter.Split('=');
+                if (keyValue.Length == 2)
+                {
+                    var key = keyValue[0];
+                    var value = keyValue[1];
+
+                    // Gán giá trị cho các biến dựa trên key
+                    if (key == "shoppingCartId")
+                    {
+                        shoppingCartId = int.Parse(value);
+                    }
+                    else if (key == "voucherId")
+                    {
+                        voucherId = int.Parse(value);
+                    }
+                    else if (key == "address")
+                    {
+                        shippingAddress = value;
+                    }
+                }
+            }
+            if (response == null || response.VnPayResponseCode != "00")
+            {
+                if (response.VnPayResponseCode == "24")
+                {
+                   return Ok("Bạn đã hủy thanh toán!");
+                }
+                else
+                {
+                    return Ok("Thanh toán ko thành công!");
+
+                }
+            }
+            
+            var cart = await _context.ShoppingCart
+            .Include(c => c.CartItems)
+           .ThenInclude(c => c.Product)
+           .FirstOrDefaultAsync(c => c.ShoppingCartId == 75);
+
+            if (cart == null)
+            {
+                return BadRequest("Invalid  data.");
+
+            }
+            return Ok("Thành công");
         }
         [Authorize]
         [HttpPost("deleteItem")]
