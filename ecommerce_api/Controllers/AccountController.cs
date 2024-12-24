@@ -69,6 +69,39 @@ namespace ecommerce_api.Controllers
 
             return Ok(userInfo);
         }
+        [HttpPost("changePassword")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO changePasswordDTO)
+        {
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier); 
+
+            if (string.IsNullOrEmpty(userName))
+            {
+                return Unauthorized("User is not authenticated.");
+            }
+
+            var user = await accountRepository.GetCurrentUserAsync(userName);
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            bool isOldPasswordCorrect = await accountRepository.CheckPasswordAsync(user, changePasswordDTO.OldPassword);
+
+            if (!isOldPasswordCorrect)
+            {
+                return StatusCode(500, "Mật khẩu cũ không chính xác.");
+            }
+
+            var result = await accountRepository.ChangePasswordAsync(user,changePasswordDTO.OldPassword, changePasswordDTO.NewPassword);
+
+            if (!result)
+            {
+                return StatusCode(500, "Có lỗi xảy ra khi thay đổi mật khẩu.");
+            }
+
+            return Ok("Mật khẩu đã được thay đổi thành công.");
+        }
         [HttpPut("edit")]
         public async Task<IActionResult> EditUserInfo([FromForm] UserDTO userDTO, IFormFile? avatarImage)
         {

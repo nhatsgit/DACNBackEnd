@@ -169,14 +169,18 @@ namespace ecommerce_api.Repostitories
         }
         public async Task<IEnumerable<Product>> GetRandomProducts(int numberOfProducts)
         {
-            var products = await _context.Products
-                .Include(p => p.ProductCategory)
-                .Include(p=>p.Shop)
-                .Where(p => p.DaAn != true&&p.Shop.BiChan!=true) 
-                .OrderBy(p => Guid.NewGuid())
-                .Take(numberOfProducts) 
-                .ToListAsync();
+            var totalProducts = await _context.Products
+     .CountAsync(p => p.DaAn != true && p.Shop.BiChan != true);
 
+            var randomSkip = new Random().Next(0, totalProducts - numberOfProducts);
+
+            var products = await _context.Products
+                 .Include(p => p.ProductCategory)
+                 .Include(p => p.Shop)
+                 .Where(p => p.DaAn != true && p.Shop.BiChan != true)
+                 .Skip(randomSkip)
+                 .Take(numberOfProducts)
+                 .ToListAsync();
             return products;
         }
 

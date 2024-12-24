@@ -97,5 +97,17 @@ namespace ecommerce_api.Repostitories
         {
             return await _userManager.UpdateAsync(user);
         }
+        public async Task<bool> CheckPasswordAsync(ApplicationUser user, string password)
+        {
+            var result = await _userManager.CheckPasswordAsync(user, password);
+            return result;
+        }
+
+        public async Task<bool> ChangePasswordAsync(ApplicationUser user, string oldPassword, string newPassword)
+        {
+            var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+
+            return result.Succeeded;
+        }
     }
 }
