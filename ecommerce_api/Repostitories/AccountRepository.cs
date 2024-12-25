@@ -51,7 +51,7 @@ namespace ecommerce_api.Repostitories
             var token = new JwtSecurityToken(
                 issuer: _config["JWT:ValidIssuer"],
                 audience: _config["JWT:ValidAudience"],
-                expires: DateTime.Now.AddMinutes(60),
+                expires: DateTime.Now.AddMinutes(180),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authenKey, SecurityAlgorithms.HmacSha512Signature)
             );

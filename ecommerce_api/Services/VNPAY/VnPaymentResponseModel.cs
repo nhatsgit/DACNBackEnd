@@ -23,6 +23,7 @@ namespace ecommerce_api.Services.VNPAY
         public DateTime CreatedDate { get; set; }
         public CheckOutDTO CheckOutDTO { get; set; }
         public int shoppingCartId { get; set; }
+        public string userName { get; set; }
     }
     public class OrderSessionModel
     {

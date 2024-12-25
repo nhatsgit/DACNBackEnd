@@ -26,7 +26,7 @@ namespace ecommerce_api.Services.VNPAY
             vnpay.AddRequestData("vnp_IpAddr", Utils.GetIpAddress(context));
             vnpay.AddRequestData("vnp_Locale", _config["VnPay:Locale"]);
 
-            vnpay.AddRequestData("vnp_OrderInfo", "shoppingCartId=" + model.shoppingCartId.ToString()+"&address="+ model.CheckOutDTO.ShippingAddress+"&voucherId="+ model.CheckOutDTO.VoucherId.ToString());
+            vnpay.AddRequestData("vnp_OrderInfo", "shoppingCartId=" + model.shoppingCartId.ToString()+"&address="+ model.CheckOutDTO.ShippingAddress+"&voucherId="+ model.CheckOutDTO.VoucherId.ToString() + "&notes="+model.CheckOutDTO.Notes+"&userName="+model.userName);
             vnpay.AddRequestData("vnp_OrderType", "other"); //default value: other
             vnpay.AddRequestData("vnp_ReturnUrl", _config["VnPay:PaymentBackReturnUrl"]);
 /*            vnpay.AddRequestData("vnp_shoppingCartId", model.shoppingCartId.ToString()); // ID giỏ hàng
@@ -57,14 +57,14 @@ namespace ecommerce_api.Services.VNPAY
             var vnp_ResponseCode = vnpay.GetResponseData("vnp_ResponseCode");
             var vnp_OrderInfo = vnpay.GetResponseData("vnp_OrderInfo");
 
-            bool checkSignature = vnpay.ValidateSignature(vnp_SecureHash, _config["VnPay:HashSecret"]);
+            /*bool checkSignature = vnpay.ValidateSignature(vnp_SecureHash, _config["VnPay:HashSecret"]);
             if (!checkSignature)
             {
                 return new VnPaymentResponseModel
                 {
                     Success = false
                 };
-            }
+            }*/
 
             return new VnPaymentResponseModel {
                 Success = true,

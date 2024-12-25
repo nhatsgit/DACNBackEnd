@@ -165,6 +165,21 @@ namespace ecommerce_api.Controllers
                 totalPrice = cartPrice - decreasePrice;
                 voucher.SoLuongCon--;
             }
+            if (model.PaymentId == 2)
+            {
+                var vnPayModel = new VnPaymentRequestModel
+                {
+                    Amount = (double)totalPrice,
+                    CreatedDate = DateTime.Now,
+                    OrderId = new Random().Next(1000, 100000),
+                    CheckOutDTO = model,
+                    shoppingCartId = shoppingCartId,
+                    userName=userName,
+
+                };
+
+                return Ok(_vnPayservice.CreatePaymentUrl(HttpContext, vnPayModel));
+            }
             foreach (var item in shoppingCart.CartItems)
             {
                 Product _product = _context.Products.FirstOrDefault(p => p.ProductId == item.ProductId);
@@ -191,20 +206,7 @@ namespace ecommerce_api.Controllers
                     Price= (ci.Product.GiaBan*(100-ci.Product.PhanTramGiam)/100)?? ci.Product.GiaBan
                 }).ToList()
             };
-            /*if (order.PaymentId == 2)
-            {
-                var vnPayModel = new VnPaymentRequestModel
-                {
-                    Amount = (double)totalPrice,
-                    CreatedDate = DateTime.Now,
-                    OrderId = new Random().Next(1000, 100000),
-                    CheckOutDTO = model,
-                    shoppingCartId=shoppingCartId
-                    
-                };
-               
-                return Ok(_vnPayservice.CreatePaymentUrl(HttpContext, vnPayModel));
-            }*/
+            
             _context.Orders.Add(order);
             _context.CartItems.RemoveRange(shoppingCart.CartItems);
             _context.ShoppingCart.Remove(shoppingCart);
@@ -219,36 +221,7 @@ namespace ecommerce_api.Controllers
         public async Task<IActionResult> PaymentCallBack()
         {
             var response = _vnPayservice.PaymentExecute(Request.Query);
-            var parameters = response.OrderDescription.Split('&');
-
-            int shoppingCartId = 0;
-            int voucherId = 0;
-            string shippingAddress = string.Empty;
-
-            // Lặp qua từng tham số và phân tích giá trị
-            foreach (var parameter in parameters)
-            {
-                var keyValue = parameter.Split('=');
-                if (keyValue.Length == 2)
-                {
-                    var key = keyValue[0];
-                    var value = keyValue[1];
-
-                    // Gán giá trị cho các biến dựa trên key
-                    if (key == "shoppingCartId")
-                    {
-                        shoppingCartId = int.Parse(value);
-                    }
-                    else if (key == "voucherId")
-                    {
-                        voucherId = int.Parse(value);
-                    }
-                    else if (key == "address")
-                    {
-                        shippingAddress = value;
-                    }
-                }
-            }
+            
             if (response == null || response.VnPayResponseCode != "00")
             {
                 if (response.VnPayResponseCode == "24")
@@ -261,18 +234,110 @@ namespace ecommerce_api.Controllers
 
                 }
             }
-            
+            var parameters = response.OrderDescription.Split('&');
+
+            int shoppingCartId = 0;
+            int voucherId = 0;
+            string shippingAddress = string.Empty;
+            string notes = string.Empty;
+            string userName = string.Empty;
+
+            foreach (var parameter in parameters)
+            {
+                var keyValue = parameter.Split('=');
+                if (keyValue.Length == 2)
+                {
+                    var key = keyValue[0];
+                    var value = keyValue[1];
+
+                    if (key == "shoppingCartId")
+                    {
+                        shoppingCartId = int.Parse(value);
+                    }
+                    else if (key == "voucherId")
+                    {
+                        voucherId = int.Parse(value);
+                    }
+                    else if (key == "address")
+                    {
+                        shippingAddress = value;
+                    }else if (key == "notes")
+                    {
+                        notes = value;
+                    }else if (key == "userName")
+                    {
+                        userName = value;
+                    }
+                }
+            }
             var cart = await _context.ShoppingCart
             .Include(c => c.CartItems)
            .ThenInclude(c => c.Product)
            .FirstOrDefaultAsync(c => c.ShoppingCartId == 75);
 
-            if (cart == null)
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+            var shoppingCart = await _context.ShoppingCart
+             .Include(c => c.CartItems)
+            .ThenInclude(c => c.Product)
+            .FirstOrDefaultAsync(c => c.ShoppingCartId == shoppingCartId && c.UserId == user.Id);
+
+            if (shoppingCart == null)
             {
                 return BadRequest("Invalid  data.");
 
             }
-            return Ok("Thành công");
+            var cartPrice = shoppingCart.CartItems.Sum(ci => ci.Quantity * (ci.Product.GiaBan * (100 - ci.Product.PhanTramGiam ?? 0) / 100));
+            var totalPrice = cartPrice;
+            var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.VoucherId == voucherId);
+            if (voucher != null && voucher.VoucherId != 1)
+            {
+                decimal decreasePrice = cartPrice / 100 * voucher.PhanTramGiam;
+                if (decreasePrice > voucher.GiamToiDa && voucher.GiamToiDa > 0)
+                {
+                    decreasePrice = voucher.GiamToiDa ?? decreasePrice;
+                }
+                totalPrice = cartPrice - decreasePrice;
+                voucher.SoLuongCon--;
+            }
+            foreach (var item in shoppingCart.CartItems)
+            {
+                Product _product = _context.Products.FirstOrDefault(p => p.ProductId == item.ProductId);
+                if (_product.SoLuongCon > 0)
+                {
+                    _product.SoLuongCon -= (int)item.Quantity;
+                }
+
+            }
+            var order = new Order
+            {
+                OrderDate = DateTime.UtcNow,
+                TotalPrice = totalPrice,
+                ShippingAddress = shippingAddress,
+                OrderStatusId = 1,
+                VoucherId = voucherId,
+                Notes =  notes,
+                PaymentId = 2,
+                UserId = user.Id,
+                OrderDetails = shoppingCart.CartItems.Select(ci => new OrderDetail
+                {
+                    ProductId = ci.ProductId,
+                    Quantity = ci.Quantity,
+                    Price = (ci.Product.GiaBan * (100 - ci.Product.PhanTramGiam) / 100) ?? ci.Product.GiaBan
+                }).ToList()
+            };
+            
+            _context.Orders.Add(order);
+            _context.CartItems.RemoveRange(shoppingCart.CartItems);
+            _context.ShoppingCart.Remove(shoppingCart);
+
+            await _context.SaveChangesAsync();
+
+
+            return Ok(order.OrderId);
         }
         [Authorize]
         [HttpPost("deleteItem")]
