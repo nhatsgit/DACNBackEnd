@@ -49,9 +49,11 @@ public partial class EcomerceDbContext : IdentityDbContext<ApplicationUser>
     public virtual DbSet<VoucherCategory> VoucherCategories { get; set; }
     public virtual DbSet<CartItem> CartItems { get; set; }
     public virtual DbSet<ShoppingCart> ShoppingCart { get; set; }
+    public virtual DbSet<ProductFeature> ProductFeature { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
         modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => new { l.LoginProvider, l.ProviderKey, l.UserId });
         modelBuilder.Entity<IdentityUserRole<string>>().HasKey(r => new { r.UserId, r.RoleId });
         modelBuilder.Entity<IdentityUserToken<string>>().HasKey(t => new { t.UserId, t.LoginProvider, t.Name });
@@ -121,6 +123,19 @@ public partial class EcomerceDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(d => d.ProductCategory).WithMany(p => p.Products).HasForeignKey(d => d.ProductCategoryId);
 
             entity.HasOne(d => d.Shop).WithMany(p => p.Products).HasForeignKey(d => d.ShopId);
+            entity.HasOne(p => p.ProductFeature)
+                  .WithOne(f => f.Product)
+                  .HasForeignKey<ProductFeature>(f => f.ProductId);
+        });
+        
+
+        modelBuilder.Entity<ProductFeature>(entity =>
+        {
+            entity.HasKey(f => f.FeatureId);
+
+            entity.Property(f => f.FeatureVector)
+                  .IsRequired()
+                  .HasColumnType("nvarchar(max)");
         });
 
         modelBuilder.Entity<ProductImage>(entity =>

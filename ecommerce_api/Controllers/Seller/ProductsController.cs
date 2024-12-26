@@ -12,6 +12,8 @@ using NuGet.Protocol.Plugins;
 using System.Security.Claims;
 using X.PagedList;
 using OfficeOpenXml;
+using System.Diagnostics;
+using Microsoft.CodeAnalysis;
 
 namespace ecommerce_api.Controllers.Seller
 {
@@ -147,13 +149,11 @@ namespace ecommerce_api.Controllers.Seller
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct([FromForm] ProductDTO productDto, IFormFile anhDaiDien, List<IFormFile> listImages)
         {
-          
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            
             var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userName == null)
             {
@@ -172,12 +172,66 @@ namespace ecommerce_api.Controllers.Seller
                 productDto.AnhDaiDien = await UploadImage.SaveImage(anhDaiDien);
             }
 
-            // Map DTO sang Entity và lưu sản phẩm
             var product = _mapper.Map<Product>(productDto);
             var createdProduct = await _productRepository.AddProduct(product, listImages);
 
+            var imagePath = Path.Combine("wwwroot", createdProduct.AnhDaiDien);
+
+            var result = await ExtractFeatureAndSaveToDbAsync(createdProduct.ProductId, imagePath);
+
+            if (!result)
+            {
+                return StatusCode(500, "Có lỗi khi lưu vector đặc trưng.");
+            }
+
             return Ok(createdProduct);
         }
+
+
+        private async Task<bool> ExtractFeatureAndSaveToDbAsync(int productId, string imagePath)
+        {
+            try
+            {
+                string pythonScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "AI", "add_features.py");
+                string fullImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", Path.GetFileName(imagePath));
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "python",
+                    Arguments = $"\"{pythonScriptPath}\" {productId} \"{fullImagePath}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    await process.WaitForExitAsync(); // Chờ script kết thúc
+
+                    if (process.ExitCode == 0)
+                    {
+                        Console.WriteLine("Feature extraction and save to DB completed successfully.");
+                        return true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error occurred while processing the feature extraction.");
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error calling Python script: {ex.Message}");
+                return false;
+            }
+        }
+        
+
+
+
+
+
         [HttpPost("excelAdd")]
         public async Task<IActionResult> UploadProductFromExcel(IFormFile file)
         {
@@ -247,4 +301,5 @@ namespace ecommerce_api.Controllers.Seller
 
 
     }
+    
 }

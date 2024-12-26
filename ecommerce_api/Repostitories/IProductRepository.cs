@@ -16,6 +16,7 @@ namespace ecommerce_api.Repostitories
          Task<Product> SwapHideShowProduct(int id);
          Task<Product> UpdateProduct(int id,Product product, List<IFormFile> listImages);
          Task<List<string>> GetSearchSuggestions(string keyword);
+        Task<IEnumerable<Product>> GetProductsByIds(List<int>? ids);
 
     }
 }

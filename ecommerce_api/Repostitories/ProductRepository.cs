@@ -259,5 +259,34 @@ namespace ecommerce_api.Repostitories
             await _context.SaveChangesAsync();
             return products;
         }
+
+        public async Task<IEnumerable<Product>> GetProductsByIds(List<int>? ids)
+        {
+            // Kiểm tra danh sách ids có hợp lệ không
+            if (ids == null || !ids.Any())
+            {
+                return Enumerable.Empty<Product>(); // Trả về danh sách rỗng nếu ids không hợp lệ
+            }
+
+            try
+            {
+                var products = await _context.Products
+                    .Where(p => ids.Contains(p.ProductId)) // Lọc sản phẩm theo ids
+                    .Include(p => p.ProductCategory)
+                    .Include(p => p.Shop)
+                    .Where(p => p.DaAn != true && p.Shop.BiChan != true)
+                    .ToListAsync(); // Lấy dữ liệu từ cơ sở dữ liệu
+
+                // Sắp xếp theo thứ tự của ids (client-side sorting)
+                var orderedProducts = products.OrderBy(p => ids.IndexOf(p.ProductId)).ToList();
+
+                return orderedProducts;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return Enumerable.Empty<Product>(); // Trả về danh sách rỗng nếu có lỗi
+            }
+        }
     }
 }

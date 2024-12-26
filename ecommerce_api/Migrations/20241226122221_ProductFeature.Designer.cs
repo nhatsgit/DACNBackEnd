@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ecommerce_api.Models;
 
@@ -11,9 +12,11 @@ using ecommerce_api.Models;
 namespace ecommerce_api.Migrations
 {
     [DbContext(typeof(EcomerceDbContext))]
-    partial class EcomerceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241226122221_ProductFeature")]
+    partial class ProductFeature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

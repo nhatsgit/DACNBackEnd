@@ -12,6 +12,11 @@ using ecommerce_api.DTO;
 using X.PagedList;
 using AutoMapper;
 using ecommerce_api.Migrations;
+using ecommerce_api.Controllers.Seller;
+using ecommerce_api.Helper;
+using System.Diagnostics;
+using System.Drawing.Printing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ecommerce_api.Controllers
 {
@@ -139,6 +144,109 @@ namespace ecommerce_api.Controllers
 
             return Ok(_mapper.Map<IEnumerable<ProductDTO>>(randomProducts));
         }
-        
+        [AllowAnonymous]
+        [HttpPost("searchByImage")]
+        public async Task<ActionResult<List<ProductSimilarity>>> UploadAndCompareImage(IFormFile image)
+        {
+            if (image == null || image.Length == 0)
+            {
+                return BadRequest("No image uploaded.");
+            }
+
+            try
+            {
+                // Lưu ảnh vào thư mục gốc
+                var filePath = await UploadImage.SaveImage(image);
+
+                var result = await CompareFeaturesWithPythonScript(filePath);
+                if (result == null || !result.Any())
+                {
+                    return NotFound("No products found matching your search criteria.");
+                }
+                if (result == null || result.Count == 0)
+                {
+                    return NotFound("No similar products found.");
+                }
+                var productIds = result.Select(r => r.ProductId).ToList();
+                var products = await _productRepository.GetProductsByIds(productIds);
+
+
+                if (products == null || !products.Any())
+                {
+                    return NotFound("No products found matching your search criteria.");
+                }
+                return Ok(_mapper.Map<IEnumerable<ProductDTO>>(products));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, "Internal server error.");
+            }
+        }
+        private async Task<List<ProductSimilarity>> CompareFeaturesWithPythonScript(string imagePath)
+        {
+            try
+            {
+                string pythonScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "AI", "compare_features.py");
+                string fullImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", Path.GetFileName(imagePath));
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "python",
+                    Arguments = $"\"{pythonScriptPath}\" \"{fullImagePath}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    using (var reader = process.StandardOutput)
+                    {
+                        var output = await reader.ReadToEndAsync();
+                        var productSimilarities = ParseSimilarityResults(output);
+                        return productSimilarities;
+                    }
+
+                    await process.WaitForExitAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error while calling Python script: {ex.Message}");
+                return null;
+            }
+        }
+
+        private List<ProductSimilarity> ParseSimilarityResults(string output)
+        {
+            var similarities = new List<ProductSimilarity>();
+
+            var lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                var parts = line.Split(',');
+                if (parts.Length == 2)
+                {
+                    if (int.TryParse(parts[0].Split(':')[1].Trim(), out int productId) &&
+                        float.TryParse(parts[1].Split(':')[1].Trim(), out float similarity))
+                    {
+                        similarities.Add(new ProductSimilarity
+                        {
+                            ProductId = productId,
+                            Similarity = similarity
+                        });
+                    }
+                }
+            }
+
+            return similarities.OrderByDescending(s => s.Similarity).ToList();
+        }
+
+    }
+    public class ProductSimilarity
+    {
+        public int ProductId { get; set; }
+        public float Similarity { get; set; }
     }
 }
