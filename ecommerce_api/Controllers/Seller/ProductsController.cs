@@ -5,9 +5,13 @@ using ecommerce_api.Models;
 using ecommerce_api.Repostitories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol.Plugins;
 using System.Security.Claims;
 using X.PagedList;
+using OfficeOpenXml;
 
 namespace ecommerce_api.Controllers.Seller
 {
@@ -173,6 +177,72 @@ namespace ecommerce_api.Controllers.Seller
             var createdProduct = await _productRepository.AddProduct(product, listImages);
 
             return Ok(createdProduct);
+        }
+        [HttpPost("excelAdd")]
+        public async Task<IActionResult> UploadProductFromExcel(IFormFile file)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("lỗi file");
+            }
+
+            var products = new List<Product>();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+
+            var userName = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userName == null)
+            {
+                return Unauthorized();
+            }
+            var seller = await _accountRepository.GetCurrentUserAsync(userName);
+            try
+            {
+                using (var stream = new MemoryStream())
+                {
+                    await file.CopyToAsync(stream);
+                    using (var package = new ExcelPackage(stream))
+                    {
+
+                        var worksheet = package.Workbook.Worksheets.First();
+                        var rowCount = worksheet.Dimension.Rows;
+
+                        for (int row = 2; row <= rowCount; row++)
+                        {
+                            var product = new Product
+                            {
+                                ProductId = int.TryParse(worksheet.Cells[row, 999].Text, out int productId) ? productId : 0,
+                                TenSp = worksheet.Cells[row, 1].Text,
+                                AnhDaiDien = worksheet.Cells[row, 2].Text,
+                                MoTa = worksheet.Cells[row, 3].Text,
+                                ThongSo = worksheet.Cells[row, 4].Text,
+                                GiaNhap = decimal.TryParse(worksheet.Cells[row, 5].Text, out decimal giaNhap) ? giaNhap : 1,
+                                GiaBan = decimal.TryParse(worksheet.Cells[row, 6].Text, out decimal giaBan) ? giaBan : 1,
+                                SoLuongCon = int.TryParse(worksheet.Cells[row, 7].Text, out int soLuongCon) ? soLuongCon : 1,
+                                PhanTramGiam = int.TryParse(worksheet.Cells[row, 8].Text, out int ptg) ? ptg : (int?)null,
+                                ProductCategoryId = int.TryParse(worksheet.Cells[row, 9].Text, out int productCategoryId) ? productCategoryId : 1,
+                                BrandId = int.TryParse(worksheet.Cells[row, 10].Text, out int brandId) ? brandId : 1,
+                                DaAn = false,
+                                DiemDanhGia = 0,
+                                ShopId = seller.ShopId ?? 0,
+                            };
+                            products.Add(product);
+                        }
+                    }
+                }
+
+                var productsadd = _productRepository.AddRangeProduct(products);
+            }
+            catch (Exception e)
+            {
+
+                return BadRequest("dữ liệu file sai"+e.Message);
+            }
+            return Ok("thêm thành công");
         }
 
 

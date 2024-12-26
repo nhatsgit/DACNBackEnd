@@ -114,7 +114,7 @@ namespace ecommerce_api.Repostitories
             await _context.SaveChangesAsync();
             return product; 
         }
-        public async Task<IEnumerable<Product>> QueryProducts(string? keyword, int? categoryId=null,int? brandId=null,int? shopId = null, decimal? minPrice=null, decimal? maxPrice=null, bool? daAn=null, bool? daHet=null)
+        public async Task<IEnumerable<Product>> QueryProducts(string? keyword, int? categoryId = null, int? brandId = null, int? shopId = null, decimal? minPrice = null, decimal? maxPrice = null, bool? daAn = null, bool? daHet = null)
         {
             var query = _context.Products
                 .Include(p => p.ProductCategory)
@@ -122,11 +122,56 @@ namespace ecommerce_api.Repostitories
                 .Include(p => p.Brand)
                 .AsQueryable();
 
-  
+            // Nếu có từ khóa tìm kiếm, xử lý loại bỏ dấu và so sánh không phân biệt dấu sau khi lấy dữ liệu
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(p => p.TenSp.Contains(keyword));
+                var normalizedKeyword = keyword.RemoveDiacritics().ToLower(); // Loại bỏ dấu và chuyển sang chữ thường
+
+                // Lấy toàn bộ dữ liệu và lọc sau khi đã loại bỏ dấu
+                var products = await query.ToListAsync();  // Lấy tất cả sản phẩm vào bộ nhớ
+                products = products.Where(p => p.TenSp.RemoveDiacritics().ToLower().Contains(normalizedKeyword)).ToList();  // Lọc dữ liệu sau khi đã loại bỏ dấu
+
+                // Tiến hành các lọc khác nếu có
+                if (categoryId.HasValue)
+                {
+                    products = products.Where(p => p.ProductCategoryId == categoryId.Value).ToList();
+                }
+                if (brandId.HasValue)
+                {
+                    products = products.Where(p => p.BrandId == brandId.Value).ToList();
+                }
+                if (shopId.HasValue)
+                {
+                    products = products.Where(p => p.ShopId == shopId.Value).ToList();
+                }
+                if (minPrice.HasValue)
+                {
+                    products = products.Where(p => p.GiaBan >= minPrice.Value).ToList();
+                }
+                if (maxPrice.HasValue)
+                {
+                    products = products.Where(p => p.GiaBan <= maxPrice.Value).ToList();
+                }
+                if (daAn.HasValue)
+                {
+                    products = products.Where(p => p.DaAn == daAn.Value).ToList();
+                }
+                if (daHet.HasValue)
+                {
+                    if (daHet.Value)
+                    {
+                        products = products.Where(p => p.SoLuongCon <= 0).ToList();
+                    }
+                    else
+                    {
+                        products = products.Where(p => p.SoLuongCon > 0).ToList();
+                    }
+                }
+
+                return products.OrderByDescending(p => p.ProductId).ToList();
             }
+
+            // Nếu không có keyword, tiếp tục với các filter còn lại
             if (categoryId.HasValue)
             {
                 query = query.Where(p => p.ProductCategoryId == categoryId.Value);
@@ -149,7 +194,7 @@ namespace ecommerce_api.Repostitories
             }
             if (daAn.HasValue)
             {
-                query = query.Where(p => p.DaAn==daAn.Value);
+                query = query.Where(p => p.DaAn == daAn.Value);
             }
             if (daHet.HasValue)
             {
@@ -160,13 +205,14 @@ namespace ecommerce_api.Repostitories
                 else
                 {
                     query = query.Where(p => p.SoLuongCon > 0);
-
                 }
             }
 
-            var products = await query.OrderByDescending(p=>p.ProductId).ToListAsync();
-            return products;
+            var productsResult = await query.OrderByDescending(p => p.ProductId).ToListAsync();
+            return productsResult;
         }
+
+
         public async Task<IEnumerable<Product>> GetRandomProducts(int numberOfProducts)
         {
             var totalProducts = await _context.Products
@@ -205,6 +251,13 @@ namespace ecommerce_api.Repostitories
             .Where(c => categoryIds.Contains(c.ProductCategoryId)) 
             .ToListAsync(); 
             return categories;
+        }
+
+        public async Task<List<Product>> AddRangeProduct(List<Product> products)
+        {
+            _context.Products.AddRange(products);
+            await _context.SaveChangesAsync();
+            return products;
         }
     }
 }

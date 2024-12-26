@@ -140,10 +140,7 @@ namespace ecommerce_api.Controllers
                 {
                     user.Avatar = await UploadImage.SaveImage(avatarImage);
                 }
-                else
-                {
-                    user.Avatar = "/images/avatar_default.png";
-                }
+                
 
                 var result = await accountRepository.SaveChangesUser(user);
                 if (!result.Succeeded)
