@@ -51,7 +51,7 @@ namespace ecommerce_api.Repostitories
             var token = new JwtSecurityToken(
                 issuer: _config["JWT:ValidIssuer"],
                 audience: _config["JWT:ValidAudience"],
-                expires: DateTime.Now.AddMinutes(60),
+                expires: DateTime.Now.AddMinutes(180),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authenKey, SecurityAlgorithms.HmacSha512Signature)
             );
@@ -96,6 +96,18 @@ namespace ecommerce_api.Repostitories
         public async Task<IdentityResult> SaveChangesUser(ApplicationUser user)
         {
             return await _userManager.UpdateAsync(user);
+        }
+        public async Task<bool> CheckPasswordAsync(ApplicationUser user, string password)
+        {
+            var result = await _userManager.CheckPasswordAsync(user, password);
+            return result;
+        }
+
+        public async Task<bool> ChangePasswordAsync(ApplicationUser user, string oldPassword, string newPassword)
+        {
+            var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+
+            return result.Succeeded;
         }
     }
 }

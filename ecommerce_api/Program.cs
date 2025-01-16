@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ecommerce_api.Repostitories;
+using ecommerce_api.Services.VNPAY;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -54,6 +55,7 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IShopRepository, ShopRepository>();
+builder.Services.AddSingleton<IVnPayService, VnPayService>();
 
 
 builder.Services.AddAuthentication(options => { 

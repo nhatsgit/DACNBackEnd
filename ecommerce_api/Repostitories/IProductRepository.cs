@@ -12,9 +12,11 @@ namespace ecommerce_api.Repostitories
          Task<Product> GetProductById(int id);
          Task<IEnumerable<ProductImage>> GetProductImagesById(int id);
          Task<Product> AddProduct(Product product, List<IFormFile> listImages);
+         Task<List<Product>> AddRangeProduct(List<Product> product);
          Task<Product> SwapHideShowProduct(int id);
          Task<Product> UpdateProduct(int id,Product product, List<IFormFile> listImages);
          Task<List<string>> GetSearchSuggestions(string keyword);
+        Task<IEnumerable<Product>> GetProductsByIds(List<int>? ids);
 
     }
 }

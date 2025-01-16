@@ -35,6 +35,8 @@ public partial class Product
     public int ShopId { get; set; }
 
     public string? MaSp { get; set; }
+    public int? FeatureId { get; set; }
+
 
     public virtual Brand Brand { get; set; } = null!;
     [JsonIgnore]
@@ -47,4 +49,5 @@ public partial class Product
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
     public virtual Shop Shop { get; set; } = null!;
+    public virtual ProductFeature? ProductFeature { get; set; }
 }

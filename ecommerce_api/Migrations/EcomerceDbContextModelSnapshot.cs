@@ -401,6 +401,9 @@ namespace ecommerce_api.Migrations
                     b.Property<int?>("DiemDanhGia")
                         .HasColumnType("int");
 
+                    b.Property<int?>("FeatureId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("GiaBan")
                         .HasColumnType("decimal(18, 2)");
 
@@ -443,6 +446,29 @@ namespace ecommerce_api.Migrations
                     b.HasIndex(new[] { "ShopId" }, "IX_Products_ShopId");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("ecommerce_api.Models.ProductFeature", b =>
+                {
+                    b.Property<int>("FeatureId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FeatureId"));
+
+                    b.Property<string>("FeatureVector")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.HasKey("FeatureId");
+
+                    b.HasIndex("ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ProductFeature");
                 });
 
             modelBuilder.Entity("ecommerce_api.Models.ProductImage", b =>
@@ -778,6 +804,17 @@ namespace ecommerce_api.Migrations
                     b.Navigation("Shop");
                 });
 
+            modelBuilder.Entity("ecommerce_api.Models.ProductFeature", b =>
+                {
+                    b.HasOne("ecommerce_api.Models.Product", "Product")
+                        .WithOne("ProductFeature")
+                        .HasForeignKey("ecommerce_api.Models.ProductFeature", "ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("ecommerce_api.Models.ProductImage", b =>
                 {
                     b.HasOne("ecommerce_api.Models.Product", "Product")
@@ -885,6 +922,8 @@ namespace ecommerce_api.Migrations
             modelBuilder.Entity("ecommerce_api.Models.Product", b =>
                 {
                     b.Navigation("OrderDetails");
+
+                    b.Navigation("ProductFeature");
 
                     b.Navigation("ProductImages");
 
