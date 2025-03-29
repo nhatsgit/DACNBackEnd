@@ -26,9 +26,7 @@ namespace ecommerce_api.Repostitories
         public async Task<string> Login(LoginModel model)
         {
             var user = await _userManager.FindByNameAsync(model.UserName);
-            var passwordValid = await _userManager.CheckPasswordAsync(user, model.Password);
-
-            if (user == null || !passwordValid)
+            if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
             {
                 return string.Empty;
             }
@@ -38,16 +36,31 @@ namespace ecommerce_api.Repostitories
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            var userClaims = await _userManager.GetClaimsAsync(user);
+            authClaims.AddRange(userClaims);
+
             var userRoles = await _userManager.GetRolesAsync(user);
             foreach (var role in userRoles)
             {
-                authClaims.Add(new Claim(ClaimTypes.Role, role.ToString()));
+                authClaims.Add(new Claim(ClaimTypes.Role, role));
+
+                var roleObj = await roleManager.FindByNameAsync(role);
+                if (roleObj != null)
+                {
+                    var roleClaims = await roleManager.GetClaimsAsync(roleObj);
+
+                    foreach (var claim in roleClaims)
+                    {
+                        if (!authClaims.Any(c => c.Type == claim.Type))
+                        {
+                            authClaims.Add(claim);
+                        }
+                    }
+                }
             }
 
-
-
             var authenKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JWT:Secret"]));
-
             var token = new JwtSecurityToken(
                 issuer: _config["JWT:ValidIssuer"],
                 audience: _config["JWT:ValidAudience"],
