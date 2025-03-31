@@ -56,7 +56,13 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IShopRepository, ShopRepository>();
 builder.Services.AddSingleton<IVnPayService, VnPayService>();
-
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("product_read", policy => policy.RequireClaim("product_read", "true"));
+    options.AddPolicy("product_create", policy => policy.RequireClaim("product_create", "true"));
+    options.AddPolicy("product_update", policy => policy.RequireClaim("product_update", "true"));
+    options.AddPolicy("product_delete", policy => policy.RequireClaim("product_delete", "true"));
+});
 
 builder.Services.AddAuthentication(options => { 
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
