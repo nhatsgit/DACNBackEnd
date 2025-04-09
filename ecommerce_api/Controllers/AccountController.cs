@@ -23,11 +23,11 @@ namespace ecommerce_api.Controllers
             this.mapper = mapper;
         }
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromForm] RegisterModel model, IFormFile? avatarImage)
+        public async Task<IActionResult> Register([FromForm] RegisterModel model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result =await accountRepository.Register(model,avatarImage);
+            var result =await accountRepository.Register(model,null);
             
             if (!result.Succeeded)
             {

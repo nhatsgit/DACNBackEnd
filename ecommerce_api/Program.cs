@@ -8,10 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ecommerce_api.Repostitories;
 using ecommerce_api.Services.VNPAY;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -110,3 +110,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+public partial class Program { }
