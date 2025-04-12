@@ -8,39 +8,40 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ecommerce_api.Repostitories;
 using ecommerce_api.Services.VNPAY;
-
+using ecommerce_api.Helper;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(option =>
 {
-	option.SwaggerDoc("v1", new OpenApiInfo { Title = "EcommerceAPI", Version = "v1" });
-	option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-	{
-		In = ParameterLocation.Header,
-		Description = "Please enter a valid token",
-		Name = "Authorization",
-		Type = SecuritySchemeType.Http,
-		BearerFormat = "JWT",
-		Scheme = "Bearer"
-	});
-	option.AddSecurityRequirement(new OpenApiSecurityRequirement
-	{
-		{
-			new OpenApiSecurityScheme
-			{
-				Reference = new OpenApiReference
-				{
-					Type=ReferenceType.SecurityScheme,
-					Id="Bearer"
-				}
-			},
-			new string[]{}
-		}
-	});
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "EcommerceAPI", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
 });
 
 
@@ -58,13 +59,13 @@ builder.Services.AddScoped<IShopRepository, ShopRepository>();
 builder.Services.AddSingleton<IVnPayService, VnPayService>();
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("product_read", policy => policy.RequireClaim("product_read", "true"));
-    options.AddPolicy("product_create", policy => policy.RequireClaim("product_create", "true"));
-    options.AddPolicy("product_update", policy => policy.RequireClaim("product_update", "true"));
-    options.AddPolicy("product_delete", policy => policy.RequireClaim("product_delete", "true"));
+    foreach (var policyKey in ClaimTypesConstants.AllPolicies.Keys)
+    {
+        options.AddPolicy(policyKey, policy =>
+            policy.RequireClaim(policyKey, "true"));
+    }
 });
-
-builder.Services.AddAuthentication(options => { 
+builder.Services.AddAuthentication(options => {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -110,4 +111,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-public partial class Program { }

@@ -36,7 +36,7 @@ namespace ecommerce_api.Controllers.Admin
 
             return Ok($"Role '{model.RoleName}' được tạo thành công!");
         }
-        [HttpPost("assign-claims")]
+        [HttpPost("AssignClaims")]
         public async Task<IActionResult> AssignClaimsToRole([FromQuery] string roleName, [FromBody] List<UserClaimDto> claims)
         {
             var role = await _roleManager.FindByNameAsync(roleName);
@@ -58,7 +58,7 @@ namespace ecommerce_api.Controllers.Admin
 
             return Ok($"Đã gán claims cho role '{roleName}' thành công!");
         }
-        [HttpGet("get-claims")]
+        [HttpGet("GetClaims")]
         public async Task<IActionResult> GetClaimsByRole([FromQuery] string roleName)
         {
             var role = await _roleManager.FindByNameAsync(roleName);
