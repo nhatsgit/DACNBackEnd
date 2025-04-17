@@ -17,7 +17,15 @@
 
 ## 🔐 Phân quyền người dùng
 
-- **Admin**: Quản lý toàn bộ hệ thống
-- **Seller**: Quản lý sản phẩm của shop mình
-- **Customer**: Xem, thêm giỏ hàng, đặt hàng
+- **Admin**: Quản lý toàn bộ hệ thống  
+- **Seller**: Quản lý sản phẩm của shop mình  
+- **Customer**: Xem, thêm giỏ hàng, đặt hàng  
+
+## 🔗 Liên kết hệ thống
+
+- 🔧 Mobile Flutter: https://github.com/nhatsgit/DACN_APP
+- 🌐 Frontend React: https://github.com/nhatsgit/DACNFrontEnd
+
+
+
 
