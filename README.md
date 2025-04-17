@@ -7,7 +7,7 @@
 - ASP.NET Core
 - Entity Framework Core
 - SQL Server
-- ASP.NET Identity
+- ASP.NET Core Identity
 - JWT Authentication
 - AutoMapper
 - LINQ
@@ -21,9 +21,3 @@
 - **Seller**: Quản lý sản phẩm của shop mình
 - **Customer**: Xem, thêm giỏ hàng, đặt hàng
 
-## ⚙️ Cài đặt project
-
-1. Clone repo:
-   ```bash
-   git clone https://github.com/yourusername/yourproject.git
-   cd yourproject
